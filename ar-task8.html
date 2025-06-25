@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 8 | Інтерактивна Візитівка (v3)</title>
+    <title>Завдання 8 | Інтерактивна Візитівка (v4 - Final)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script type="importmap">
@@ -16,37 +16,15 @@
     <style>
         body { margin: 0; }
         .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
-        #info-panel {
-            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
-            text-align: center; font-family: Arial, sans-serif; z-index: 100;
-        }
-        #control-buttons {
-            display: none;
-            position: absolute; bottom: 20px; left: 50%;
-            transform: translateX(-50%); z-index: 20;
-            display: flex; gap: 10px;
-        }
-        #control-buttons button {
-            padding: 12px 16px; font-size: 14px; color: white;
-            background-color: rgba(0, 89, 179, 0.8); border: none;
-            border-radius: 8px; cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        #control-buttons button:active {
-            background-color: rgba(0, 60, 120, 0.9); transform: scale(0.95);
-        }
+        #info-panel { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; text-align: center; font-family: Arial, sans-serif; z-index: 100; }
+        #control-buttons { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; gap: 10px; }
+        #control-buttons button { padding: 12px 16px; font-size: 14px; color: white; background-color: rgba(0, 89, 179, 0.8); border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: background-color 0.3s, transform 0.1s; }
+        #control-buttons button:active { background-color: rgba(0, 60, 120, 0.9); transform: scale(0.95); }
     </style>
 </head>
 <body>
     <div class="ar-container"></div>
-    <div id="info-panel">
-        <h3>Контактна інформація</h3>
-        <p>Email: student@example.com</p>
-        <p>Телефон: +380 00 000 00 00</p>
-        <button id="close-info-btn">Закрити</button>
-    </div>
+    <div id="info-panel"><h3>Контактна інформація</h3><p>Email: student@example.com</p><p>Телефон: +380 00 000 00 00</p><button id="close-info-btn">Закрити</button></div>
     <div id="control-buttons">
         <button id="model-btn">Змінити модель</button>
         <button id="audio-btn">Увімкнути музику</button>
@@ -59,86 +37,68 @@
         import { GLTFLoader } from "GLTFLoader";
 
         document.addEventListener("DOMContentLoaded", async () => {
-            const controlButtons = document.getElementById('control-buttons');
-            const infoPanel = document.getElementById('info-panel');
-            const modelBtn = document.getElementById('model-btn');
-            const audioBtn = document.getElementById('audio-btn');
-            const videoBtn = document.getElementById('video-btn');
-            const infoBtn = document.getElementById('info-btn');
-            const closeInfoBtn = document.getElementById('close-info-btn');
+            const controlButtons = document.getElementById('control-buttons'), infoPanel = document.getElementById('info-panel'), modelBtn = document.getElementById('model-btn'), audioBtn = document.getElementById('audio-btn'), videoBtn = document.getElementById('video-btn'), infoBtn = document.getElementById('info-btn'), closeInfoBtn = document.getElementById('close-info-btn');
 
             const { MindARThree } = window.MINDAR.IMAGE;
-            const mindarThree = new MindARThree({
-                container: document.querySelector(".ar-container"),
-                imageTargetSrc: "./patterns/artem.mind",
-            });
+            const mindarThree = new MindARThree({ container: document.querySelector(".ar-container"), imageTargetSrc: "./patterns/artem.mind" });
             const { renderer, scene, camera } = mindarThree;
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-            directionalLight.position.set(0, 5, 10);
-            scene.add(directionalLight);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1); directionalLight.position.set(0, 5, 10); scene.add(directionalLight);
 
-            const clock = new THREE.Clock();
-            let mixer;
-            const listener = new THREE.AudioListener();
-            camera.add(listener);
+            const clock = new THREE.Clock(); let mixer;
+            const listener = new THREE.AudioListener(); camera.add(listener);
             const sound = new THREE.PositionalAudio(listener);
 
-            const anchor = mindarThree.addAnchor(0);
-            anchor.group.add(sound);
+            const anchor = mindarThree.addAnchor(0); anchor.group.add(sound);
 
-            // *** ЗМІНА ***: Створюємо масив об'єктів для моделей з індивідуальними налаштуваннями
+            // Налаштуйте масштаб (scale) і позицію (position) для кожної моделі тут
             const models = [
                 { path: './models/kaneki_dance1.glb', scale: 0.4, position: [0, -0.8, 0] },
                 { path: './models/kaneki_dance2.glb', scale: 0.4, position: [0, -0.8, 0] },
-                { path: './models/logo.glb', scale: 0.1, position: [0, -0.5, 0] } // Індивідуальні налаштування для третьої моделі
+                { path: './models/logo.glb', scale: 0.1, position: [0, -0.5, 0] }
             ];
-            let currentModelIndex = 0;
-            let currentModel = null;
+            let currentModelIndex = 0, currentModel = null;
 
             const audioPaths = ['./audio/ukraine.mp3', './audio/ghoul.mp3', './audio/background.mp3'];
-            let currentAudioIndex = 0;
-            let isAudioStarted = false; // *** ЗМІНА ***: Прапорець для відстеження першого запуску аудіо
+            let currentAudioIndex = 0, isAudioInitialized = false;
 
             const loader = new GLTFLoader();
 
-            // *** ЗМІНА ***: Функція тепер використовує індивідуальні налаштування
             const loadModel = (index) => {
-                const modelData = models[index];
-                if (currentModel) anchor.group.remove(currentModel);
-                mixer = null;
+                const modelData = models[index]; if (currentModel) anchor.group.remove(currentModel); mixer = null;
                 loader.load(modelData.path, (gltf) => {
-                    currentModel = gltf.scene;
-                    currentModel.scale.set(modelData.scale, modelData.scale, modelData.scale);
-                    currentModel.position.set(...modelData.position); // "..." розпаковує масив [x, y, z]
-                    anchor.group.add(currentModel);
-                    if (gltf.animations.length > 0) {
-                        mixer = new THREE.AnimationMixer(gltf.scene);
-                        mixer.clipAction(gltf.animations[0]).play();
-                    }
+                    currentModel = gltf.scene; currentModel.scale.set(modelData.scale, modelData.scale, modelData.scale); currentModel.position.set(...modelData.position); anchor.group.add(currentModel);
+                    if (gltf.animations.length > 0) { mixer = new THREE.AnimationMixer(gltf.scene); mixer.clipAction(gltf.animations[0]).play(); }
                 });
             };
-            
-            const loadAudio = (index, playOnLoad = false) => {
-                sound.stop();
+
+            // *** ЗМІНА ***: Функція `playAudio` - єдиний центр керування відтворенням
+            const playAudio = () => {
+                if (isAudioInitialized && anchor.found && !sound.isPlaying) {
+                    sound.play();
+                }
+            }
+
+            // *** ЗМІНА ***: `loadAudio` тепер приймає `callback` - функцію, яка виконається після завантаження
+            const loadAudio = (index, callback) => {
+                sound.stop(); // Зупиняємо попередній трек перед завантаженням нового
                 new THREE.AudioLoader().load(audioPaths[index], (buffer) => {
                     sound.setBuffer(buffer);
                     sound.setLoop(true);
                     sound.setVolume(0.5);
-                    if (playOnLoad) sound.play();
+                    if (callback) {
+                        callback(); // Викликаємо callback-функцію
+                    }
                 });
             };
 
-            const video = document.createElement("video");
-            video.src = "./videos/intro.mp4"; video.muted = true; video.loop = true; video.playsInline = true;
-            const videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) }));
-            videoPlane.position.set(0, 0, -0.1); videoPlane.visible = false;
-            anchor.group.add(videoPlane);
+            const video = document.createElement("video"); video.src = "./videos/intro.mp4"; video.muted = true; video.loop = true; video.playsInline = true;
+            const videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) })); videoPlane.position.set(0, 0, -0.1); videoPlane.visible = false; anchor.group.add(videoPlane);
             
+            // *** ЗМІНА ***: `onTargetFound` тепер просто викликає `playAudio`
             anchor.onTargetFound = () => {
-                if (isAudioStarted) sound.play(); // Грати, тільки якщо аудіо вже було ініціалізовано користувачем
+                playAudio();
                 controlButtons.style.display = 'flex';
             };
             anchor.onTargetLost = () => {
@@ -148,14 +108,17 @@
                 infoPanel.style.display = 'none';
             };
 
-            // *** ЗМІНА ***: Оновлена логіка кнопки аудіо
+            // *** ЗМІНА ***: Ключова зміна в логіці кнопки аудіо
             audioBtn.addEventListener('click', () => {
-                currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
-                loadAudio(currentAudioIndex, true); // Завантажити і програти
-                if (!isAudioStarted) {
-                    isAudioStarted = true; // Позначити, що користувач ініціював аудіо
-                    audioBtn.textContent = 'Змінити музику'; // Змінити текст кнопки
+                if (!isAudioInitialized) {
+                    isAudioInitialized = true;
+                    audioBtn.textContent = 'Змінити музику';
+                } else {
+                    currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
                 }
+                
+                // Завантажуємо трек і передаємо `playAudio` як callback
+                loadAudio(currentAudioIndex, playAudio);
             });
 
             modelBtn.addEventListener('click', () => { currentModelIndex = (currentModelIndex + 1) % models.length; loadModel(currentModelIndex); });
@@ -165,11 +128,11 @@
             
             await mindarThree.start();
             loadModel(currentModelIndex);
-            loadAudio(currentAudioIndex); // Попередньо завантажуємо перший трек, але не вмикаємо
+            // Попередньо завантажуємо перший трек, але без callback, щоб він не грав одразу
+            loadAudio(currentAudioIndex, null);
 
             renderer.setAnimationLoop(() => {
-                const delta = clock.getDelta();
-                if (mixer) mixer.update(delta);
+                const delta = clock.getDelta(); if (mixer) mixer.update(delta);
                 renderer.render(scene, camera);
             });
         });
