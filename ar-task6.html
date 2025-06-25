@@ -50,6 +50,10 @@
             video.playsInline = true;
             const texture = new THREE.VideoTexture(video);
             const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.5625), new THREE.MeshBasicMaterial({map: texture}));
+            
+            // Встановлюємо порядок рендерингу для відео (нижчий)
+            plane.renderOrder = 0;
+            
             anchor1.group.add(plane);
             anchor1.onTargetFound = () => video.play();
             anchor1.onTargetLost = () => video.pause();
@@ -60,7 +64,18 @@
             loader.load("./models/ship.glb", (gltf) => {
                 shipModel = gltf.scene;
                 shipModel.scale.set(0.5, 0.5, 0.5);
-                shipModel.position.set(0, -3, 3);
+                shipModel.position.set(0, -4,5, 7);
+                
+                // Встановлюємо порядок рендерингу для корабля (вищий)
+                shipModel.renderOrder = 1;
+                
+                // Проходимо по всіх частинах моделі і вимикаємо перевірку глибини
+                shipModel.traverse((node) => {
+                    if (node.isMesh) {
+                        node.material.depthTest = false;
+                    }
+                });
+                
                 anchor2.group.add(shipModel);
             });
 
