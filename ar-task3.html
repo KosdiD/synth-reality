@@ -23,18 +23,18 @@
             
             const cube = new THREE.Mesh(
                 new THREE.BoxGeometry(0.3, 0.3, 0.3),
-                new THREE.MeshBasicMaterial({map: loader.load("../textures/avatar.jpg")})
+                new THREE.MeshBasicMaterial({map: loader.load("../textures/earth.jpg")})
             );
             cube.position.x = -0.5;
             
             const sphere = new THREE.Mesh(
                 new THREE.SphereGeometry(0.2, 32, 16),
-                new THREE.MeshBasicMaterial({map: loader.load("https://raw.githubusercontent.com/username/repo/main/textures/github.jpg")})
+                new THREE.MeshBasicMaterial({map: loader.load("../textures/hardwood.jpg")})
             );
             
             const cone = new THREE.Mesh(
                 new THREE.ConeGeometry(0.2, 0.4, 32),
-                new THREE.MeshBasicMaterial({map: loader.load("https://example.com/texture.jpg")})
+                new THREE.MeshBasicMaterial({map: loader.load("../textures/disturb.jpg")})
             );
             cone.position.x = 0.5;
             
