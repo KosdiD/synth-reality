@@ -1,50 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
-    <script type="importmap">
-        { "imports": { "three": "https://unpkg.com/three@0.150.1/build/three.module.js" } }
-    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
     <style>
         body { margin: 0; }
-        #ar-div { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; overflow: hidden; }
+        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
     </style>
 </head>
 <body>
-    <div id="ar-div"></div>
-    <script type="module">
-        import * as THREE from "three";
-        document.addEventListener("DOMContentLoaded", () => {
-            const start = async () => {
-                const mindarThree = new MINDAR.IMAGE.MindARThree({
-                    container: document.querySelector("#ar-div"),
-                    imageTargetSrc: "./patterns/artem.mind",
-                });
-                const { renderer, scene, camera } = mindarThree;
-                const anchor = mindarThree.addAnchor(0);
-                
-                const geo1 = new THREE.BoxGeometry(0.3, 0.3, 0.3);
-                const mat1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                const mesh1 = new THREE.Mesh(geo1, mat1);
-                mesh1.position.x = -0.5;
-                anchor.group.add(mesh1);
+    <div class="ar-container"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const THREE = window.THREE;
+            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+                container: document.querySelector(".ar-container"),
+                imageTargetSrc: "./patterns/artem.mind",
+            });
+            const { renderer, scene, camera } = mindarThree;
+            const anchor = mindarThree.addAnchor(0);
+            
+            const geo1 = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+            const mat1 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const mesh1 = new THREE.Mesh(geo1, mat1);
+            mesh1.position.x = -0.5;
+            anchor.group.add(mesh1);
 
-                const geo2 = new THREE.SphereGeometry(0.2, 32, 32);
-                const mat2 = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.8 });
-                const mesh2 = new THREE.Mesh(geo2, mat2);
-                anchor.group.add(mesh2);
+            const geo2 = new THREE.SphereGeometry(0.2, 32, 16);
+            const mat2 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const mesh2 = new THREE.Mesh(geo2, mat2);
+            anchor.group.add(mesh2);
 
-                const geo3 = new THREE.ConeGeometry(0.2, 0.4, 32);
-                const mat3 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-                const mesh3 = new THREE.Mesh(geo3, mat3);
-                mesh3.position.x = 0.5;
-                anchor.group.add(mesh3);
-
-                await mindarThree.start();
-                renderer.setAnimationLoop(() => { renderer.render(scene, camera); });
-            }
-            start();
+            const geo3 = new THREE.ConeGeometry(0.2, 0.4, 32);
+            const mat3 = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+            const mesh3 = new THREE.Mesh(geo3, mat3);
+            mesh3.position.x = 0.5;
+            anchor.group.add(mesh3);
+            
+            await mindarThree.start();
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
         });
     </script>
 </body>
