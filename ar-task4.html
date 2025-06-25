@@ -2,33 +2,68 @@
 <html>
 <head>
     <meta charset="UTF-8" />
+    <title>Завдання 4 | Об'єднана модульна версія</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
-    <style>body { margin: 0; } .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }</style>
+
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "GLTFLoader": "https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js"
+            }
+        }
+    </script>
+
+    <style>
+        body { margin: 0; }
+        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+    </style>
 </head>
 <body>
     <div class="ar-container"></div>
-    <script>
+    <script type="module">
+        import * as THREE from "three";
+        import { GLTFLoader } from "GLTFLoader";
+
         document.addEventListener("DOMContentLoaded", async () => {
-            const THREE = window.THREE;
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+            const { MindARThree } = window.MINDAR.IMAGE;
+            const mindarThree = new MindARThree({
                 container: document.querySelector(".ar-container"),
-                imageTargetSrc: "./patterns/artem.mind",
+                imageTargetSrc: "./patterns/combined.mind",
+                maxTrack: 2
             });
             const { renderer, scene, camera } = mindarThree;
+
             const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
             scene.add(light);
-            const anchor = mindarThree.addAnchor(0);
-            const loader = new THREE.GLTFLoader();
+
+            const loader = new GLTFLoader();
+
+            // --- Маркер 1 (artem, індекс 0) ---
+            const anchor1 = mindarThree.addAnchor(0);
             loader.load("./models/kaneki_animated1.glb", (gltf) => {
                 gltf.scene.scale.set(0.2, 0.2, 0.2);
                 gltf.scene.position.set(0, -0.2, 0);
-                anchor.group.add(gltf.scene);
+                anchor1.group.add(gltf.scene);
             });
+            anchor1.onTargetFound = () => { console.log("Знайдено маркер 1 (artem)"); }
+            anchor1.onTargetLost = () => { console.log("Втрачено маркер 1 (artem)"); }
+
+            // --- Маркер 2 (target, індекс 1) ---
+            const anchor2 = mindarThree.addAnchor(1);
+            loader.load("./models/logo.glb", (gltf) => {
+                gltf.scene.scale.set(0.1, 0.1, 0.1);
+                anchor2.group.add(gltf.scene);
+            });
+            anchor2.onTargetFound = () => { console.log("Знайдено маркер 2 (target)"); }
+            anchor2.onTargetLost = () => { console.log("Втрачено маркер 2 (target)"); }
+
             await mindarThree.start();
-            renderer.setAnimationLoop(() => { renderer.render(scene, camera); });
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
         });
     </script>
 </body>
