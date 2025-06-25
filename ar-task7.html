@@ -1,52 +1,67 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>AR YouTube Vimeo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Завдання 7 | YouTube та Vimeo</title>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-ui.prod.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        iframe { display: none; }
+        body {
+            margin: 0;
+        }
+        .ar-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .ar-ui-target {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        .ar-ui-target[data-show="true"] {
+            display: block;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
-    <iframe id="youtube" width="640" height="360" src="https://www.youtube.com/watch?v=y8i-5907ky4?autoplay=1&mute=1&loop=1&playlist=YOUTUBE_ID" frameborder="0"></iframe>
-    <iframe id="vimeo" src="https://player.vimeo.com/video/524933864?autoplay=1&muted=1&loop=1" width="640" height="360" frameborder="0"></iframe>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <div class="ar-container" mindar-image-ui="imageTargetSrc: ./patterns/combined.mind; maxTrack: 2;">
+        
+        <div class="ar-ui-target" data-target-index="0">
+            <iframe src="https://www.youtube.com/embed/9d8wWcJLnFI?autoplay=1&mute=1&loop=1&playlist=9d8wWcJLnFI" allow="autoplay"></iframe>
+        </div>
+
+        <div class="ar-ui-target" data-target-index="1">
+            <iframe src="https://player.vimeo.com/video/199724121?autoplay=1&muted=1&loop=1"></iframe>
+        </div>
+
+    </div>
     <script>
-        const markerIndex = new URLSearchParams(window.location.search).get('marker') || '0';
-        document.addEventListener("DOMContentLoaded", async () => {
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                container: document.body,
-                imageTargetSrc: `../patterns/marker${markerIndex}.mind`
+        document.addEventListener("DOMContentLoaded", () => {
+            const arContainer = document.querySelector(".ar-container");
+            const targets = arContainer.querySelectorAll(".ar-ui-target");
+
+            arContainer.addEventListener("targetFound", event => {
+                const targetIndex = event.detail.targetIndex;
+                if (targets[targetIndex]) {
+                    targets[targetIndex].setAttribute("data-show", "true");
+                }
             });
-            const {renderer, scene, camera} = mindarThree;
-            const anchor = mindarThree.addAnchor(0);
-            
-            const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 360;
-            const ctx = canvas.getContext('2d');
-            const texture = new THREE.CanvasTexture(canvas);
-            
-            const plane = new THREE.Mesh(
-                new THREE.PlaneGeometry(1, 0.562),
-                new THREE.MeshBasicMaterial({map: texture})
-            );
-            anchor.group.add(plane);
-            
-            const iframe = document.getElementById(markerIndex === '0' ? 'youtube' : 'vimeo');
-            
-            function updateTexture() {
-                ctx.drawImage(iframe, 0, 0, 640, 360);
-                texture.needsUpdate = true;
-            }
-            
-            await mindarThree.start();
-            renderer.setAnimationLoop(() => {
-                updateTexture();
-                renderer.render(scene, camera);
+
+            arContainer.addEventListener("targetLost", event => {
+                const targetIndex = event.detail.targetIndex;
+                if (targets[targetIndex]) {
+                    targets[targetIndex].setAttribute("data-show", "false");
+                }
             });
         });
     </script>
