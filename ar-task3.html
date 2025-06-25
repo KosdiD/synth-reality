@@ -1,50 +1,49 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>AR Textured Animation</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <style>
-        body { margin: 0; overflow: hidden; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
 </head>
 <body>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <div style="position: absolute; width: 100%; height: 100%;" id="container"></div>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                container: document.body,
-                imageTargetSrc: "./patterns/target.mind"
+            const mindarThree = new MINDAR.IMAGE.MindARThree({
+                container: document.querySelector("#container"),
+                imageTargetSrc: ".patterns/target.mind",
             });
-            const {renderer, scene, camera} = mindarThree;
+            const { renderer, scene, camera } = mindarThree;
+            const textureLoader = new THREE.TextureLoader();
+
+            const texture1 = textureLoader.load("./textures/earth.jpg");
+            const geometry1 = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+            const material1 = new THREE.MeshBasicMaterial({ map: texture1 });
+            const obj1 = new THREE.Mesh(geometry1, material1);
+            obj1.position.x = -0.6;
+            
+            const texture2 = textureLoader.load("./textures/disturb.jpg");
+            const geometry2 = new THREE.PlaneGeometry(0.5, 0.5);
+            const material2 = new THREE.MeshBasicMaterial({ map: texture2 });
+            const obj2 = new THREE.Mesh(geometry2, material2);
+            
+            const texture3 = textureLoader.load("./textures/hardwood.jpg");
+            const geometry3 = new THREE.SphereGeometry(0.25, 32, 16);
+            const material3 = new THREE.MeshBasicMaterial({ map: texture3 });
+            const obj3 = new THREE.Mesh(geometry3, material3);
+            obj3.position.x = 0.6;
+
             const anchor = mindarThree.addAnchor(0);
-            const loader = new THREE.TextureLoader();
-            
-            const cube = new THREE.Mesh(
-                new THREE.BoxGeometry(0.3, 0.3, 0.3),
-                new THREE.MeshBasicMaterial({map: loader.load("./textures/earth.jpg")})
-            );
-            cube.position.x = -0.5;
-            
-            const sphere = new THREE.Mesh(
-                new THREE.SphereGeometry(0.2, 32, 16),
-                new THREE.MeshBasicMaterial({map: loader.load("./textures/hardwood.jpg")})
-            );
-            
-            const cone = new THREE.Mesh(
-                new THREE.ConeGeometry(0.2, 0.4, 32),
-                new THREE.MeshBasicMaterial({map: loader.load("./textures/disturb.jpg")})
-            );
-            cone.position.x = 0.5;
-            
-            anchor.group.add(cube, sphere, cone);
-            
+            anchor.group.add(obj1, obj2, obj3);
+
+            const clock = new THREE.Clock();
             await mindarThree.start();
             renderer.setAnimationLoop(() => {
-                cube.position.y = Math.sin(Date.now() * 0.001) * 0.1;
-                sphere.rotation.y += 0.01;
-                cone.scale.x = cone.scale.z = 1 + Math.sin(Date.now() * 0.002) * 0.2;
+                const time = clock.getElapsedTime();
+                obj1.position.y = Math.sin(time) * 0.2;
+                obj2.rotation.y = time;
+                const scale = 1 + Math.sin(time * 2) * 0.2;
+                obj3.scale.set(scale, scale, scale);
                 renderer.render(scene, camera);
             });
         });
