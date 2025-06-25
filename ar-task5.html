@@ -2,65 +2,93 @@
 <html>
 <head>
     <meta charset="UTF-8" />
+    <title>Завдання 5 | Анімація та Просторовий Звук</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
-    <style>body { margin: 0; } .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }</style>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "GLTFLoader": "https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js"
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; }
+        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+    </style>
 </head>
 <body>
     <div class="ar-container"></div>
-    <script>
+    <script type="module">
+        import * as THREE from "three";
+        import { GLTFLoader } from "GLTFLoader";
+
         document.addEventListener("DOMContentLoaded", async () => {
-            const THREE = window.THREE;
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+            const { MindARThree } = window.MINDAR.IMAGE;
+            const mindarThree = new MindARThree({
                 container: document.querySelector(".ar-container"),
                 imageTargetSrc: "./patterns/combined.mind",
                 maxTrack: 2
             });
             const { renderer, scene, camera } = mindarThree;
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            scene.add(light);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(0, 5, 10);
+            scene.add(directionalLight);
+
             const listener = new THREE.AudioListener();
             camera.add(listener);
-            const loader = new THREE.GLTFLoader();
+
+            const loader = new GLTFLoader();
             const clock = new THREE.Clock();
-            
+            let mixer1, mixer2;
+
+            // --- Маркер 1 (artem, індекс 0) ---
             const anchor1 = mindarThree.addAnchor(0);
-            let mixer1;
-            loader.load("./models/kaneki_animated1.glb", (gltf) => {
-                gltf.scene.scale.set(0.2, 0.2, 0.2);
-                gltf.scene.position.set(0, -0.2, 0);
-                anchor1.group.add(gltf.scene);
-                mixer1 = new THREE.AnimationMixer(gltf.scene);
-                mixer1.clipAction(gltf.animations[0]).play();
-            });
             const audio1 = new THREE.PositionalAudio(listener);
-            new THREE.AudioLoader().load("./audio/ghoul.mp3", (buffer) => {
+            new THREE.AudioLoader().load("./audio/ukraine.mp3", (buffer) => {
                 audio1.setBuffer(buffer);
                 audio1.setLoop(true);
+                audio1.setRefDistance(20);
             });
             anchor1.group.add(audio1);
-            anchor1.onTargetFound = () => { audio1.play(); }
-            anchor1.onTargetLost = () => { audio1.stop(); }
 
-            const anchor2 = mindarThree.addAnchor(1);
-            let mixer2;
-            loader.load("./models/kaneki_animated2.glb", (gltf) => {
-                gltf.scene.scale.set(0.2, 0.2, 0.2);
-                gltf.scene.position.set(0, -0.2, 0);
-                anchor2.group.add(gltf.scene);
-                mixer2 = new THREE.AnimationMixer(gltf.scene);
-                mixer2.clipAction(gltf.animations[0]).play();
+            loader.load("./models/kaneki_dance1.glb", (gltf) => {
+                gltf.scene.scale.set(0.7, 0.7, 0.7);
+                gltf.scene.position.set(0, -1.2, 0);
+                anchor1.group.add(gltf.scene);
+                if (gltf.animations.length > 0) {
+                    mixer1 = new THREE.AnimationMixer(gltf.scene);
+                    mixer1.clipAction(gltf.animations[0]).play();
+                }
             });
+            anchor1.onTargetFound = () => audio1.play();
+            anchor1.onTargetLost = () => audio1.pause();
+
+            // --- Маркер 2 (target, індекс 1) ---
+            const anchor2 = mindarThree.addAnchor(1);
             const audio2 = new THREE.PositionalAudio(listener);
-            new THREE.AudioLoader().load("./audio/future.mp3", (buffer) => {
+            new THREE.AudioLoader().load("./audio/ghoul.mp3", (buffer) => {
                 audio2.setBuffer(buffer);
                 audio2.setLoop(true);
+                audio2.setRefDistance(20);
             });
             anchor2.group.add(audio2);
-            anchor2.onTargetFound = () => { audio2.play(); }
-            anchor2.onTargetLost = () => { audio2.stop(); }
+
+            loader.load("./models/kaneki_dance2.glb", (gltf) => {
+                gltf.scene.scale.set(0.7, 0.7, 0.7);
+                gltf.scene.position.set(0, -1.2, 0);
+                anchor2.group.add(gltf.scene);
+                if (gltf.animations.length > 0) {
+                    mixer2 = new THREE.AnimationMixer(gltf.scene);
+                    mixer2.clipAction(gltf.animations[0]).play();
+                }
+            });
+            anchor2.onTargetFound = () => audio2.play();
+            anchor2.onTargetLost = () => audio2.pause();
 
             await mindarThree.start();
             renderer.setAnimationLoop(() => {
