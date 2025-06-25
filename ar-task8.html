@@ -20,7 +20,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: "../patterns/card.mind"
+                imageTargetSrc: "../patterns/artem.mind"
             });
             const {renderer, scene, camera} = mindarThree;
             const anchor = mindarThree.addAnchor(0);
@@ -31,21 +31,21 @@
             
             const cardBg = new THREE.Mesh(
                 new THREE.PlaneGeometry(1, 0.6),
-                new THREE.MeshBasicMaterial({map: loader.load("../textures/cardbg.jpg")})
+                new THREE.MeshBasicMaterial({map: loader.load("./textures/earth.jpg")})
             );
             anchor.group.add(cardBg);
             
             const avatarGeo = new THREE.CircleGeometry(0.15, 32);
             const avatar = new THREE.Mesh(
                 avatarGeo,
-                new THREE.MeshBasicMaterial({map: loader.load("../textures/avatar.jpg")})
+                new THREE.MeshBasicMaterial({map: loader.load("./textures/hardwood.jpg")})
             );
             avatar.position.set(-0.3, 0.1, 0.01);
             anchor.group.add(avatar);
             
             const nameText = new THREE.Mesh(
                 new THREE.PlaneGeometry(0.4, 0.1),
-                new THREE.MeshBasicMaterial({map: loader.load("../textures/name.png"), transparent: true})
+                new THREE.MeshBasicMaterial({map: loader.load("./textures/artem.png"), transparent: true})
             );
             nameText.position.set(0, 0.15, 0.01);
             nameText.visible = false;
@@ -107,11 +107,11 @@
                 if (intersects.length > 0) {
                     const obj = intersects[0].object;
                     if (obj === avatar) {
-                        infoDiv.innerHTML = "John Doe<br>Creative Developer<br>john@example.com";
+                        infoDiv.innerHTML = "Artem<br>Creative Developer<br>Im-24";
                         infoDiv.style.display = "block";
                         setTimeout(() => infoDiv.style.display = "none", 3000);
                     } else if (obj.userData.type === 'contact') {
-                        window.open("https://example.com/contact", "_blank");
+                        window.open("https://github.com/KosdiD", "_blank");
                     }
                 }
             });
