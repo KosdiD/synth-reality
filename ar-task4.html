@@ -2,110 +2,33 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 4 - Два маркери, дві моделі</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-
-    <style>
-        body { margin: 0; overflow: hidden; }
-        #status-panel { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; font-family: monospace; z-index: 100; }
-        .marker-status { padding: 5px; margin-top: 5px; border-radius: 3px; }
-        .found { background: rgba(0, 255, 0, 0.3); }
-        .lost { background: rgba(255, 0, 0, 0.3); }
-    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <style>body { margin: 0; } .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }</style>
 </head>
 <body>
-    <div id="status-panel">
-        <div>Статус відстеження:</div>
-        <div id="marker-0" class="marker-status lost">Маркер "artem": НЕ ЗНАЙДЕНО</div>
-        <div id="marker-1" class="marker-status lost">Маркер "target": НЕ ЗНАЙДЕНО</div>
-    </div>
-
+    <div class="ar-container"></div>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            try {
-                // Ініціалізуємо MindAR для відстеження ДВОХ маркерів
-                const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                    container: document.body,
-                    imageTargetSrc: "./patterns/targets.mind", // Один файл з двома маркерами
-                    maxTrack: 2, // Вказуємо, що потрібно відстежувати 2 маркери
-                });
-
-                const { renderer, scene, camera } = mindarThree;
-                const loader = new THREE.GLTFLoader();
-
-                // Додаємо освітлення, щоб моделі не були чорними
-                const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-                scene.add(light);
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
-                directionalLight.position.set(0, 2, 1);
-                scene.add(directionalLight);
-
-                const mixers = []; // Масив для анімаційних мікшерів
-
-                // --- Якір та модель для першого маркера (індекс 0) ---
-                const anchor1 = mindarThree.addAnchor(0);
-                loader.load("./models/logo.glb", (gltf) => {
-                    const model = gltf.scene;
-                    model.scale.set(0.1, 0.1, 0.1);
-                    anchor1.group.add(model);
-                });
-
-                anchor1.onTargetFound = () => {
-                    console.log("Знайдено маркер 0 (artem)");
-                    document.getElementById('marker-0').textContent = 'Маркер "artem": ЗНАЙДЕНО';
-                    document.getElementById('marker-0').className = 'marker-status found';
-                };
-                anchor1.onTargetLost = () => {
-                    console.log("Втрачено маркер 0 (artem)");
-                    document.getElementById('marker-0').textContent = 'Маркер "artem": НЕ ЗНАЙДЕНО';
-                    document.getElementById('marker-0').className = 'marker-status lost';
-                };
-
-                // --- Якір та модель для другого маркера (індекс 1) ---
-                const anchor2 = mindarThree.addAnchor(1);
-                loader.load("./models/kaneki_dance1.glb", (gltf) => {
-                    const model = gltf.scene;
-                    model.scale.set(0.1, 0.1, 0.1);
-                    anchor2.group.add(model);
-
-                    if (gltf.animations.length > 0) {
-                        const mixer = new THREE.AnimationMixer(model);
-                        mixers.push(mixer);
-                        const action = mixer.clipAction(gltf.animations[0]);
-                        action.play();
-                    }
-                });
-
-                anchor2.onTargetFound = () => {
-                    console.log("Знайдено маркер 1 (target)");
-                    document.getElementById('marker-1').textContent = 'Маркер "target": ЗНАЙДЕНО';
-                    document.getElementById('marker-1').className = 'marker-status found';
-                };
-                anchor2.onTargetLost = () => {
-                    console.log("Втрачено маркер 1 (target)");
-                    document.getElementById('marker-1').textContent = 'Маркер "target": НЕ ЗНАЙДЕНО';
-                    document.getElementById('marker-1').className = 'marker-status lost';
-                };
-
-                // Запускаємо AR
-                await mindarThree.start();
-                
-                const clock = new THREE.Clock();
-                renderer.setAnimationLoop(() => {
-                    const delta = clock.getDelta();
-                    // Оновлюємо анімації
-                    mixers.forEach(mixer => mixer.update(delta));
-                    renderer.render(scene, camera);
-                });
-
-            } catch (error) {
-                console.error("Помилка ініціалізації AR:", error);
-                document.getElementById('status-panel').innerHTML = `<div style="color: red;">Помилка: ${error.message}</div>`;
-            }
+            const THREE = window.THREE;
+            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+                container: document.querySelector(".ar-container"),
+                imageTargetSrc: "./patterns/artem.mind",
+            });
+            const { renderer, scene, camera } = mindarThree;
+            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+            scene.add(light);
+            const anchor = mindarThree.addAnchor(0);
+            const loader = new THREE.GLTFLoader();
+            loader.load("./models/kaneki_animated1.glb", (gltf) => {
+                gltf.scene.scale.set(0.2, 0.2, 0.2);
+                gltf.scene.position.set(0, -0.2, 0);
+                anchor.group.add(gltf.scene);
+            });
+            await mindarThree.start();
+            renderer.setAnimationLoop(() => { renderer.render(scene, camera); });
         });
     </script>
 </body>
