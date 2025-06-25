@@ -9,7 +9,7 @@
     </style>
 </head>
 <body>
-    <video id="ocean" src="../videos/ocean.mp4" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
+    <video id="ocean" src="./videos/ocean.mp4" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
@@ -18,7 +18,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: `../patterns/marker${markerIndex}.mind`
+                imageTargetSrc: `./patterns/marker${markerIndex}.mind`
             });
             const {renderer, scene, camera} = mindarThree;
             const anchor = mindarThree.addAnchor(0);
@@ -34,7 +34,7 @@
                 video.play();
             } else {
                 const loader = new THREE.GLTFLoader();
-                loader.load("../models/ship.glb", (gltf) => {
+                loader.load("./models/ship.glb", (gltf) => {
                     const ship = gltf.scene;
                     ship.scale.set(0.1, 0.1, 0.1);
                     anchor.group.add(ship);
