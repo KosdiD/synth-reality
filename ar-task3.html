@@ -1,49 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <style>body { margin: 0; } .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }</style>
 </head>
 <body>
-    <div style="position: absolute; width: 100%; height: 100%;" id="container"></div>
+    <div class="ar-container"></div>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            const mindarThree = new MINDAR.IMAGE.MindARThree({
-                container: document.querySelector("#container"),
-                imageTargetSrc: ".patterns/target.mind",
+            const THREE = window.THREE;
+            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+                container: document.querySelector(".ar-container"),
+                imageTargetSrc: "./patterns/artem.mind",
             });
             const { renderer, scene, camera } = mindarThree;
             const textureLoader = new THREE.TextureLoader();
-
-            const texture1 = textureLoader.load("./textures/earth.jpg");
-            const geometry1 = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-            const material1 = new THREE.MeshBasicMaterial({ map: texture1 });
-            const obj1 = new THREE.Mesh(geometry1, material1);
-            obj1.position.x = -0.6;
-            
-            const texture2 = textureLoader.load("./textures/disturb.jpg");
-            const geometry2 = new THREE.PlaneGeometry(0.5, 0.5);
-            const material2 = new THREE.MeshBasicMaterial({ map: texture2 });
-            const obj2 = new THREE.Mesh(geometry2, material2);
-            
-            const texture3 = textureLoader.load("./textures/hardwood.jpg");
-            const geometry3 = new THREE.SphereGeometry(0.25, 32, 16);
-            const material3 = new THREE.MeshBasicMaterial({ map: texture3 });
-            const obj3 = new THREE.Mesh(geometry3, material3);
-            obj3.position.x = 0.6;
-
+            const tex1 = textureLoader.load("./textures/disturb.jpg");
+            const tex2 = textureLoader.load("./textures/hardwood.jpg");
+            const tex3 = textureLoader.load("./textures/earth.jpg");
             const anchor = mindarThree.addAnchor(0);
-            anchor.group.add(obj1, obj2, obj3);
+
+            const mesh1 = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshBasicMaterial({ map: tex1 }));
+            mesh1.position.x = -0.6;
+            anchor.group.add(mesh1);
+
+            const mesh2 = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.05, 16, 100), new THREE.MeshBasicMaterial({ map: tex2 }));
+            anchor.group.add(mesh2);
+
+            const mesh3 = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 16), new THREE.MeshBasicMaterial({ map: tex3 }));
+            mesh3.position.x = 0.6;
+            anchor.group.add(mesh3);
 
             const clock = new THREE.Clock();
             await mindarThree.start();
             renderer.setAnimationLoop(() => {
+                const delta = clock.getDelta();
                 const time = clock.getElapsedTime();
-                obj1.position.y = Math.sin(time) * 0.2;
-                obj2.rotation.y = time;
-                const scale = 1 + Math.sin(time * 2) * 0.2;
-                obj3.scale.set(scale, scale, scale);
+                mesh1.position.y = Math.sin(time) * 0.2; 
+                mesh2.rotation.y += delta * 0.5;
+                const scale = 0.8 + Math.sin(time * 2) * 0.2;
+                mesh3.scale.set(scale, scale, scale);
                 renderer.render(scene, camera);
             });
         });
