@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 8 | Інтерактивна Візитівка (CSS UI)</title>
+    <title>Завдання 8 | Інтерактивна Візитівка (v3)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script type="importmap">
@@ -21,50 +21,35 @@
             background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
             text-align: center; font-family: Arial, sans-serif; z-index: 100;
         }
-
-        /* *** НОВЕ ***: Стилі для контейнера з кнопками */
         #control-buttons {
-            display: none; /* Початково приховані */
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 20;
-            display: flex;
-            gap: 10px; /* Відстань між кнопками */
+            display: none;
+            position: absolute; bottom: 20px; left: 50%;
+            transform: translateX(-50%); z-index: 20;
+            display: flex; gap: 10px;
         }
-        
-        /* *** НОВЕ ***: Стилі для самих кнопок */
         #control-buttons button {
-            padding: 12px 16px;
-            font-size: 14px;
-            color: white;
-            background-color: rgba(0, 89, 179, 0.8);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            padding: 12px 16px; font-size: 14px; color: white;
+            background-color: rgba(0, 89, 179, 0.8); border: none;
+            border-radius: 8px; cursor: pointer;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: background-color 0.3s, transform 0.1s;
         }
-
         #control-buttons button:active {
-            background-color: rgba(0, 60, 120, 0.9);
-            transform: scale(0.95);
+            background-color: rgba(0, 60, 120, 0.9); transform: scale(0.95);
         }
     </style>
 </head>
 <body>
     <div class="ar-container"></div>
-    
     <div id="info-panel">
         <h3>Контактна інформація</h3>
         <p>Email: student@example.com</p>
         <p>Телефон: +380 00 000 00 00</p>
-        <button id="close-info-btn">Закрити</button> </div>
-
+        <button id="close-info-btn">Закрити</button>
+    </div>
     <div id="control-buttons">
         <button id="model-btn">Змінити модель</button>
-        <button id="audio-btn">Змінити музику</button>
+        <button id="audio-btn">Увімкнути музику</button>
         <button id="video-btn">Показати відео</button>
         <button id="info-btn">Інформація</button>
     </div>
@@ -74,7 +59,6 @@
         import { GLTFLoader } from "GLTFLoader";
 
         document.addEventListener("DOMContentLoaded", async () => {
-            // Отримуємо посилання на елементи інтерфейсу
             const controlButtons = document.getElementById('control-buttons');
             const infoPanel = document.getElementById('info-panel');
             const modelBtn = document.getElementById('model-btn');
@@ -82,7 +66,6 @@
             const videoBtn = document.getElementById('video-btn');
             const infoBtn = document.getElementById('info-btn');
             const closeInfoBtn = document.getElementById('close-info-btn');
-
 
             const { MindARThree } = window.MINDAR.IMAGE;
             const mindarThree = new MindARThree({
@@ -106,23 +89,30 @@
             const anchor = mindarThree.addAnchor(0);
             anchor.group.add(sound);
 
-            const modelPaths = ['./models/kaneki_dance1.glb', './models/kaneki_dance2.glb', './models/logo.glb'];
+            // *** ЗМІНА ***: Створюємо масив об'єктів для моделей з індивідуальними налаштуваннями
+            const models = [
+                { path: './models/kaneki_dance1.glb', scale: 0.4, position: [0, -0.8, 0] },
+                { path: './models/kaneki_dance2.glb', scale: 0.4, position: [0, -0.8, 0] },
+                { path: './models/logo.glb', scale: 0.1, position: [0, -0.5, 0] } // Індивідуальні налаштування для третьої моделі
+            ];
             let currentModelIndex = 0;
             let currentModel = null;
 
             const audioPaths = ['./audio/ukraine.mp3', './audio/ghoul.mp3', './audio/background.mp3'];
             let currentAudioIndex = 0;
+            let isAudioStarted = false; // *** ЗМІНА ***: Прапорець для відстеження першого запуску аудіо
 
             const loader = new GLTFLoader();
 
+            // *** ЗМІНА ***: Функція тепер використовує індивідуальні налаштування
             const loadModel = (index) => {
-                const path = modelPaths[index];
+                const modelData = models[index];
                 if (currentModel) anchor.group.remove(currentModel);
                 mixer = null;
-                loader.load(path, (gltf) => {
+                loader.load(modelData.path, (gltf) => {
                     currentModel = gltf.scene;
-                    currentModel.scale.set(0.4, 0.4, 0.4);
-                    currentModel.position.set(0, -0.8, 0);
+                    currentModel.scale.set(modelData.scale, modelData.scale, modelData.scale);
+                    currentModel.position.set(...modelData.position); // "..." розпаковує масив [x, y, z]
                     anchor.group.add(currentModel);
                     if (gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(gltf.scene);
@@ -130,7 +120,7 @@
                     }
                 });
             };
-
+            
             const loadAudio = (index, playOnLoad = false) => {
                 sound.stop();
                 new THREE.AudioLoader().load(audioPaths[index], (buffer) => {
@@ -142,64 +132,40 @@
             };
 
             const video = document.createElement("video");
-            video.src = "./videos/intro.mp4";
-            video.muted = true; video.loop = true; video.playsInline = true;
-            const videoPlane = new THREE.Mesh(
-                new THREE.PlaneGeometry(1, 0.75),
-                new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) })
-            );
-            videoPlane.position.set(0, 0, -0.1);
-            videoPlane.visible = false;
+            video.src = "./videos/intro.mp4"; video.muted = true; video.loop = true; video.playsInline = true;
+            const videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) }));
+            videoPlane.position.set(0, 0, -0.1); videoPlane.visible = false;
             anchor.group.add(videoPlane);
             
-            // *** ЗМІНА ***: Логіка відображення інтерфейсу
             anchor.onTargetFound = () => {
-                sound.play();
-                controlButtons.style.display = 'flex'; // Показуємо кнопки
+                if (isAudioStarted) sound.play(); // Грати, тільки якщо аудіо вже було ініціалізовано користувачем
+                controlButtons.style.display = 'flex';
             };
             anchor.onTargetLost = () => {
                 sound.pause();
-                video.pause();
-                videoPlane.visible = false;
-                controlButtons.style.display = 'none'; // Ховаємо кнопки
-                infoPanel.style.display = 'none'; // Ховаємо й інфо-панель
+                video.pause(); videoPlane.visible = false;
+                controlButtons.style.display = 'none';
+                infoPanel.style.display = 'none';
             };
 
-            // *** ВИДАЛЕНО ***: Весь блок з document.body.addEventListener("click", ...) та Raycaster видалено.
-
-            // *** НОВЕ ***: Прості обробники подій для HTML-кнопок
-            modelBtn.addEventListener('click', () => {
-                currentModelIndex = (currentModelIndex + 1) % modelPaths.length;
-                loadModel(currentModelIndex);
-            });
-
+            // *** ЗМІНА ***: Оновлена логіка кнопки аудіо
             audioBtn.addEventListener('click', () => {
                 currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
-                loadAudio(currentAudioIndex, true);
-            });
-
-            videoBtn.addEventListener('click', () => {
-                videoPlane.visible = !videoPlane.visible;
-                if (videoPlane.visible) {
-                    video.play();
-                    videoBtn.textContent = 'Сховати відео';
-                } else {
-                    video.pause();
-                    videoBtn.textContent = 'Показати відео';
+                loadAudio(currentAudioIndex, true); // Завантажити і програти
+                if (!isAudioStarted) {
+                    isAudioStarted = true; // Позначити, що користувач ініціював аудіо
+                    audioBtn.textContent = 'Змінити музику'; // Змінити текст кнопки
                 }
             });
 
-            infoBtn.addEventListener('click', () => {
-                infoPanel.style.display = 'block';
-            });
-
-            closeInfoBtn.addEventListener('click', () => {
-                infoPanel.style.display = 'none';
-            });
+            modelBtn.addEventListener('click', () => { currentModelIndex = (currentModelIndex + 1) % models.length; loadModel(currentModelIndex); });
+            videoBtn.addEventListener('click', () => { videoPlane.visible = !videoPlane.visible; videoPlane.visible ? (video.play(), videoBtn.textContent = 'Сховати відео') : (video.pause(), videoBtn.textContent = 'Показати відео'); });
+            infoBtn.addEventListener('click', () => { infoPanel.style.display = 'block'; });
+            closeInfoBtn.addEventListener('click', () => { infoPanel.style.display = 'none'; });
             
             await mindarThree.start();
             loadModel(currentModelIndex);
-            loadAudio(currentAudioIndex);
+            loadAudio(currentAudioIndex); // Попередньо завантажуємо перший трек, але не вмикаємо
 
             renderer.setAnimationLoop(() => {
                 const delta = clock.getDelta();
