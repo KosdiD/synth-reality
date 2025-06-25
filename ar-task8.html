@@ -2,85 +2,121 @@
 <html>
 <head>
     <meta charset="UTF-8" />
+    <title>Завдання 8 | Інтерактивна Візитівка</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
-    <style>body { margin: 0; } .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }</style>
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "GLTFLoader": "https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js"
+            }
+        }
+    </script>
+    <style>
+        body { margin: 0; }
+        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+        #info-panel {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
+            text-align: center; font-family: Arial, sans-serif; z-index: 100;
+        }
+    </style>
 </head>
 <body>
+    <div id="info-panel">
+        <h3>Контактна інформація</h3>
+        <p>Email: student@example.com</p>
+        <p>Телефон: +380 00 000 00 00</p>
+    </div>
     <div class="ar-container"></div>
-    <script>
+    <script type="module">
+        import * as THREE from "three";
+        import { GLTFLoader } from "GLTFLoader";
+
         document.addEventListener("DOMContentLoaded", async () => {
-            const THREE = window.THREE;
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
+            const { MindARThree } = window.MINDAR.IMAGE;
+            const mindarThree = new MindARThree({
                 container: document.querySelector(".ar-container"),
                 imageTargetSrc: "./patterns/artem.mind",
             });
             const { renderer, scene, camera } = mindarThree;
-            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
-            scene.add(light);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(0, 5, 10);
+            scene.add(directionalLight);
+
             const anchor = mindarThree.addAnchor(0);
+            const listener = new THREE.AudioListener();
+            camera.add(listener);
 
-            const avatar = new THREE.Mesh(
-                new THREE.CircleGeometry(0.2, 32),
-                new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('./textures/disturb.jpg') })
-            );
-            avatar.position.set(-0.35, 0, 0.01);
-            anchor.group.add(avatar);
+            const bgAudio = new THREE.Audio(listener);
+            new THREE.AudioLoader().load('./audio/background.mp3', (b) => { bgAudio.setBuffer(b); bgAudio.setLoop(true); bgAudio.setVolume(0.2); });
+            anchor.onTargetFound = () => bgAudio.play();
+            anchor.onTargetLost = () => bgAudio.pause();
 
-            const loader = new THREE.GLTFLoader();
-            loader.load('./models/logo.glb', (gltf) => {
-                gltf.scene.scale.set(0.07, 0.07, 0.07);
-                gltf.scene.position.set(0.35, 0.2, 0.01);
-                anchor.group.add(gltf.scene);
-            });
-            
             const video = document.createElement("video");
             video.src = "./videos/intro.mp4";
             video.muted = true;
             video.loop = true;
             video.playsInline = true;
-            const videoPlane = new THREE.Mesh(
-                new THREE.PlaneGeometry(1, 0.5625),
-                new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) })
-            );
-            videoPlane.position.set(0, 0, -0.1);
+            const videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) }));
             videoPlane.visible = false;
             anchor.group.add(videoPlane);
+            
+            const interactiveObjects = [];
 
-            const videoButton = new THREE.Mesh(
-                new THREE.BoxGeometry(0.2, 0.1, 0.1),
-                new THREE.MeshBasicMaterial({ color: 0x0000ff })
-            );
-            videoButton.position.set(0.35, -0.2, 0.01);
-            videoButton.userData.clickable = true;
-            anchor.group.add(videoButton);
+            const createButton = (position, color, name) => {
+                const button = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), new THREE.MeshStandardMaterial({ color: color }));
+                button.position.set(...position);
+                button.userData.name = name;
+                interactiveObjects.push(button);
+                return button;
+            };
 
-            const listener = new THREE.AudioListener();
-            camera.add(listener);
-            const bgAudio = new THREE.Audio(listener);
-            new THREE.AudioLoader().load('./audio/background.mp3', (buffer) => {
-                bgAudio.setBuffer(buffer);
-                bgAudio.setLoop(true);
-                bgAudio.setVolume(0.3);
+            const videoButton = createButton([0.4, 0.3, 0], 0x0000ff, 'videoButton');
+            const websiteButton = createButton([0.4, 0, 0], 0x00ff00, 'websiteButton');
+            const infoButton = createButton([0.4, -0.3, 0], 0xff0000, 'infoButton');
+            anchor.group.add(videoButton, websiteButton, infoButton);
+
+            const loader = new GLTFLoader();
+            loader.load("./models/logo.glb", (gltf) => {
+                gltf.scene.scale.set(0.08, 0.08, 0.08);
+                gltf.scene.position.set(-0.3, 0, 0);
+                anchor.group.add(gltf.scene);
             });
-            anchor.onTargetFound = () => bgAudio.play();
-            anchor.onTargetLost = () => bgAudio.pause();
 
-            document.body.addEventListener('click', (e) => {
+            document.body.addEventListener("click", (e) => {
+                if (!anchor.found) return;
                 const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
                 const raycaster = new THREE.Raycaster();
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObject(videoButton);
+                const intersects = raycaster.intersectObjects(interactiveObjects);
+
                 if (intersects.length > 0) {
-                    videoPlane.visible = !videoPlane.visible;
-                    if (videoPlane.visible) video.play(); else video.pause();
+                    const name = intersects[0].object.userData.name;
+                    switch (name) {
+                        case 'videoButton':
+                            videoPlane.visible = !videoPlane.visible;
+                            videoPlane.visible ? video.play() : video.pause();
+                            break;
+                        case 'websiteButton':
+                            window.open('https://github.com', '_blank');
+                            break;
+                        case 'infoButton':
+                            const panel = document.getElementById('info-panel');
+                            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+                            break;
+                    }
                 }
             });
 
             await mindarThree.start();
-            renderer.setAnimationLoop(() => { renderer.render(scene, camera); });
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
         });
     </script>
 </body>
