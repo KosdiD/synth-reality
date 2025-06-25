@@ -1,725 +1,184 @@
-<!DOCTYPE html>
-<html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Віртуальна примірочна</title>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-face-aframe.prod.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden;
-            background: #000;
-        }
-
-        .app-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .ar-view {
-            width: 100%;
-            height: 100%;
-        }
-
-        /* Панель керування */
-        .control-panel {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            max-height: 40vh;
-            overflow-y: auto;
-            z-index: 10;
-        }
-
-        /* Категорії аксесуарів */
-        .category-tabs {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .category-tab {
-            padding: 8px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        .category-tab:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .category-tab.active {
-            background: #4CAF50;
-            border-color: #4CAF50;
-        }
-
-        /* Список аксесуарів */
-        .accessories-grid {
-            display: flex;
-            gap: 15px;
-            overflow-x: auto;
-            padding: 10px 0;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-        }
-
-        .accessories-grid::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .accessories-grid::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-
-        .accessory-item {
-            flex-shrink: 0;
-            width: 80px;
-            height: 80px;
-            border-radius: 15px;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            overflow: hidden;
-            position: relative;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .accessory-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .accessory-item .placeholder {
-            color: white;
-            font-size: 32px;
-            opacity: 0.7;
-        }
-
-        .accessory-item:hover {
-            transform: scale(1.05);
-            border-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .accessory-item.selected {
-            border-color: #4CAF50;
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
-        }
-
-        .accessory-item.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: #4CAF50;
-            color: white;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }
-
-        /* Кнопки дій */
-        .action-buttons {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
-        }
-
-        .action-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .action-btn:hover {
-            transform: scale(1.1);
-            background: white;
-        }
-
-        .action-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Модальне вікно для збереження */
-        .share-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
-        .share-modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-        }
-
-        .captured-image {
-            width: 100%;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .share-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .share-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .share-btn.primary {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .share-btn.secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .share-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Індикатор завантаження */
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 18px;
-            z-index: 5;
-        }
-
-        /* Адаптивність */
-        @media (max-width: 600px) {
-            .control-panel {
-                padding: 15px;
-            }
-
-            .accessory-item {
-                width: 60px;
-                height: 60px;
-            }
-
-            .category-tab {
-                padding: 6px 15px;
-                font-size: 12px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <div class="loading">Завантаження камери...</div>
-        
-        <!-- Кнопки дій -->
-        <div class="action-buttons">
-            <button class="action-btn" id="captureBtn" title="Зробити знімок">📸</button>
-            <button class="action-btn" id="resetBtn" title="Скинути все">🔄</button>
-        </div>
-
-        <!-- AR сцена -->
-        <div class="ar-view">
-            <a-scene
-                mindar-face
-                embedded
-                color-space="sRGB"
-                renderer="colorManagement: true, physicallyCorrectLights"
-                vr-mode-ui="enabled: false"
-                device-orientation-permission-ui="enabled: false">
-                
-                <a-assets>
-                    <!-- Моделі аксесуарів -->
-                    <a-asset-item id="headModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/sparkar/headOccluder.glb"></a-asset-item>
-                    
-                    <!-- Окуляри -->
-                    <a-asset-item id="kaminaGlasses" src="./models/kamina_glasses.glb"></a-asset-item>
-                    <a-asset-item id="glassesModel" src="./models/glasses.glb"></a-asset-item>
-                    
-                    <!-- Капелюхи -->
-                    <a-asset-item id="jotaroHat" src="./models/jotaro_hat.glb"></a-asset-item>
-                    
-                    <!-- Аксесуари для щелепи -->
-                    <a-asset-item id="lowerJaw" src="./models/lower_jaw.glb"></a-asset-item>
-                    
-                    <!-- Кіберімпланти -->
-                    <a-asset-item id="roboticEye" src="./models/robotic_eye.glb"></a-asset-item>
-                    
-                    <!-- Жакети -->
-                    <a-asset-item id="cyberpunkJacket" src="./models/cyberpunk_jacket.glb"></a-asset-item>
-                    <a-asset-item id="regularJacket" src="./models/jacket.glb"></a-asset-item>
-                    <a-asset-item id="rockJacket" src="./models/rock_jacket_mid-poly.glb"></a-asset-item>
-                </a-assets>
-
-                <a-camera active="false" position="0 0 0"></a-camera>
-
-                <!-- Оклюдер для голови -->
-                <a-entity mindar-face-target="anchorIndex: 168">
-                    <a-gltf-model
-                        mindar-face-occluder
-                        position="0 -0.3 0.15"
-                        rotation="0 0 0"
-                        scale="0.065 0.065 0.065"
-                        src="#headModel">
-                    </a-gltf-model>
-                </a-entity>
-
-                <!-- Окуляри -->
-                <a-entity mindar-face-target="anchorIndex: 168">
-                    <a-gltf-model
-                        id="kamina-glasses"
-                        rotation="0 0 0"
-                        position="0 0 0"
-                        scale="0.15 0.15 0.15"
-                        src="#kaminaGlasses"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <a-entity mindar-face-target="anchorIndex: 168">
-                    <a-gltf-model
-                        id="regular-glasses"
-                        rotation="0 0 0"
-                        position="0 0 0"
-                        scale="0.1 0.1 0.1"
-                        src="#glassesModel"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <!-- Капелюхи -->
-                <a-entity mindar-face-target="anchorIndex: 10">
-                    <a-gltf-model
-                        id="jotaro-hat"
-                        rotation="0 180 0"
-                        position="0 0.3 0"
-                        scale="0.2 0.2 0.2"
-                        src="#jotaroHat"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <!-- Аксесуари для щелепи (anchorIndex: 152 - підборіддя) -->
-                <a-entity mindar-face-target="anchorIndex: 152">
-                    <a-gltf-model
-                        id="lower-jaw"
-                        rotation="0 0 0"
-                        position="0 -0.1 0"
-                        scale="0.08 0.08 0.08"
-                        src="#lowerJaw"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <!-- Кіберімпланти для ока (anchorIndex: 159 - ліве око) -->
-                <a-entity mindar-face-target="anchorIndex: 159">
-                    <a-gltf-model
-                        id="robotic-eye"
-                        rotation="0 0 0"
-                        position="0 0 0"
-                        scale="0.05 0.05 0.05"
-                        src="#roboticEye"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <!-- Жакети (anchorIndex: 5 - основа шиї) -->
-                <a-entity mindar-face-target="anchorIndex: 5">
-                    <a-gltf-model
-                        id="cyberpunk-jacket"
-                        rotation="0 180 0"
-                        position="0 -0.8 0"
-                        scale="0.3 0.3 0.3"
-                        src="#cyberpunkJacket"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <a-entity mindar-face-target="anchorIndex: 5">
-                    <a-gltf-model
-                        id="regular-jacket"
-                        rotation="0 180 0"
-                        position="0 -0.8 0"
-                        scale="0.25 0.25 0.25"
-                        src="#regularJacket"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-
-                <a-entity mindar-face-target="anchorIndex: 5">
-                    <a-gltf-model
-                        id="rock-jacket"
-                        rotation="0 180 0"
-                        position="0 -0.8 0"
-                        scale="0.3 0.3 0.3"
-                        src="#rockJacket"
-                        visible="false">
-                    </a-gltf-model>
-                </a-entity>
-            </a-scene>
-        </div>
-
-        <!-- Панель керування -->
-        <div class="control-panel">
-            <div class="category-tabs">
-                <button class="category-tab active" data-category="all">Всі</button>
-                <button class="category-tab" data-category="glasses">Окуляри</button>
-                <button class="category-tab" data-category="hats">Капелюхи</button>
-                <button class="category-tab" data-category="cybernetics">Кіберімпланти</button>
-                <button class="category-tab" data-category="jackets">Жакети</button>
-            </div>
-
-            <div class="accessories-grid" id="accessoriesGrid">
-                <!-- Динамічно заповнюється -->
-            </div>
-        </div>
-
-        <!-- Модальне вікно для збереження -->
-        <div class="share-modal" id="shareModal">
-            <div class="modal-content">
-                <h2>Ваше фото готове!</h2>
-                <img class="captured-image" id="capturedImage" alt="Знімок">
-                <div class="share-buttons">
-                    <button class="share-btn primary" id="downloadBtn">Завантажити</button>
-                    <button class="share-btn primary" id="shareBtn">Поділитися</button>
-                    <button class="share-btn secondary" id="closeModalBtn">Закрити</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Дані про аксесуари з емодзі як заглушки для мініатюр
-        const accessories = {
-            glasses: [
-                {
-                    id: 'kamina-glasses',
-                    name: 'Окуляри Каміни',
-                    emoji: '🥽',
-                    modelId: '#kamina-glasses'
-                },
-                {
-                    id: 'regular-glasses',
-                    name: 'Звичайні окуляри',
-                    emoji: '👓',
-                    modelId: '#regular-glasses'
-                }
-            ],
-            hats: [
-                {
-                    id: 'jotaro-hat',
-                    name: 'Капелюх Джотаро',
-                    emoji: '🎩',
-                    modelId: '#jotaro-hat'
-                }
-            ],
-            cybernetics: [
-                {
-                    id: 'robotic-eye',
-                    name: 'Кіберочко',
-                    emoji: '👁️',
-                    modelId: '#robotic-eye'
-                },
-                {
-                    id: 'lower-jaw',
-                    name: 'Кіберщелепа',
-                    emoji: '🦾',
-                    modelId: '#lower-jaw'
-                }
-            ],
-            jackets: [
-                {
-                    id: 'cyberpunk-jacket',
-                    name: 'Кіберпанк жакет',
-                    emoji: '🧥',
-                    modelId: '#cyberpunk-jacket'
-                },
-                {
-                    id: 'regular-jacket',
-                    name: 'Звичайний жакет',
-                    emoji: '👔',
-                    modelId: '#regular-jacket'
-                },
-                {
-                    id: 'rock-jacket',
-                    name: 'Рок жакет',
-                    emoji: '🎸',
-                    modelId: '#rock-jacket'
-                }
-            ]
-        };
-
-        // Стан програми
-        let activeCategory = 'all';
-        let selectedAccessories = new Set();
-
-        // Ініціалізація
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeApp();
-            setupEventListeners();
-            renderAccessories();
-            
-            // Приховати індикатор завантаження після старту AR
-            setTimeout(() => {
-                document.querySelector('.loading').style.display = 'none';
-            }, 2000);
+      document.addEventListener("DOMContentLoaded", function() {
+        const list = ["glasses1", "glasses2", "hat1", "hat2", "cyberEye", "cyberJaw", "jacket1", "jacket2", "jacket3"];
+        const visibles = [true, false, false, false, false, false, false, false, false];
+        
+        const setVisible = (button, entities, visible) => {
+          if (visible) {
+            button.classList.add("selected");
+          } else {
+            button.classList.remove("selected");
+          }
+          entities.forEach((entity) => {
+            entity.setAttribute("visible", visible);
+          });
+        }
+        
+        list.forEach((item, index) => {
+          const button = document.querySelector("#" + item);
+          const entities = document.querySelectorAll("." + item + "-entity");
+          setVisible(button, entities, visibles[index]);
+          button.addEventListener('click', () => {
+            visibles[index] = !visibles[index];
+            setVisible(button, entities, visibles[index]);
+          });
         });
 
-        // Ініціалізація програми
-        function initializeApp() {
-            // Встановити початкові видимості
-            Object.values(accessories).flat().forEach(accessory => {
-                if (accessory.modelId) {
-                    const entity = document.querySelector(accessory.modelId);
-                    if (entity) entity.setAttribute('visible', false);
-                } else if (accessory.modelIds) {
-                    accessory.modelIds.forEach(modelId => {
-                        const entity = document.querySelector(modelId);
-                        if (entity) entity.setAttribute('visible', false);
-                    });
-                }
-            });
-        }
-
-        // Налаштування слухачів подій
-        function setupEventListeners() {
-            // Категорії
-            document.querySelectorAll('.category-tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    activeCategory = tab.dataset.category;
-                    updateCategoryTabs();
-                    renderAccessories();
-                });
-            });
-
-            // Кнопки дій
-            document.getElementById('captureBtn').addEventListener('click', capturePhoto);
-            document.getElementById('resetBtn').addEventListener('click', resetAll);
-            document.getElementById('closeModalBtn').addEventListener('click', closeShareModal);
-            document.getElementById('downloadBtn').addEventListener('click', downloadPhoto);
-            document.getElementById('shareBtn').addEventListener('click', sharePhoto);
-        }
-
-        // Оновлення активної категорії
-        function updateCategoryTabs() {
-            document.querySelectorAll('.category-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.category === activeCategory);
-            });
-        }
-
-        // Відображення аксесуарів
-        function renderAccessories() {
-            const grid = document.getElementById('accessoriesGrid');
-            grid.innerHTML = '';
-
-            let itemsToShow = [];
+        // Функція захоплення фото
+        document.querySelector("#captureBtn").addEventListener('click', () => {
+          const sceneEl = document.querySelector('a-scene');
+          const sceneCanvas = sceneEl.components.screenshot.getCanvas('perspective');
+          
+          // Конвертуємо canvas в blob
+          sceneCanvas.toBlob(function(blob) {
+            // Створюємо посилання для завантаження
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = 'virtual-tryon-' + Date.now() + '.png';
+            link.click();
             
-            if (activeCategory === 'all') {
-                itemsToShow = Object.values(accessories).flat();
-            } else {
-                itemsToShow = accessories[activeCategory] || [];
-            }
-
-            itemsToShow.forEach(accessory => {
-                const item = document.createElement('div');
-                item.className = 'accessory-item';
-                item.dataset.accessoryId = accessory.id;
-                
-                if (selectedAccessories.has(accessory.id)) {
-                    item.classList.add('selected');
-                }
-
-                item.innerHTML = accessory.thumbnail 
-                    ? `<img src="${accessory.thumbnail}" alt="${accessory.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="placeholder" style="display:none">${accessory.emoji || '?'}</div>`
-                    : `<div class="placeholder">${accessory.emoji || '?'}</div>`;
-                
-                item.addEventListener('click', () => toggleAccessory(accessory));
-                
-                grid.appendChild(item);
-            });
-        }
-
-        // Перемикання аксесуару
-        function toggleAccessory(accessory) {
-            const isSelected = selectedAccessories.has(accessory.id);
-            
-            if (isSelected) {
-                selectedAccessories.delete(accessory.id);
-                hideAccessory(accessory);
-            } else {
-                // Видалити інші аксесуари тієї ж категорії
-                const category = Object.entries(accessories).find(([_, items]) => 
-                    items.some(item => item.id === accessory.id)
-                )?.[0];
-                
-                if (category) {
-                    accessories[category].forEach(item => {
-                        if (selectedAccessories.has(item.id)) {
-                            selectedAccessories.delete(item.id);
-                            hideAccessory(item);
-                        }
-                    });
-                }
-                
-                selectedAccessories.add(accessory.id);
-                showAccessory(accessory);
-            }
-            
-            renderAccessories();
-        }
-
-        // Показати аксесуар
-        function showAccessory(accessory) {
-            if (accessory.modelId) {
-                const entity = document.querySelector(accessory.modelId);
-                if (entity) entity.setAttribute('visible', true);
-            } else if (accessory.modelIds) {
-                accessory.modelIds.forEach(modelId => {
-                    const entity = document.querySelector(modelId);
-                    if (entity) entity.setAttribute('visible', true);
-                });
-            }
-        }
-
-        // Приховати аксесуар
-        function hideAccessory(accessory) {
-            if (accessory.modelId) {
-                const entity = document.querySelector(accessory.modelId);
-                if (entity) entity.setAttribute('visible', false);
-            } else if (accessory.modelIds) {
-                accessory.modelIds.forEach(modelId => {
-                    const entity = document.querySelector(modelId);
-                    if (entity) entity.setAttribute('visible', false);
-                });
-            }
-        }
-
-        // Скинути всі аксесуари
-        function resetAll() {
-            selectedAccessories.clear();
-            Object.values(accessories).flat().forEach(accessory => {
-                hideAccessory(accessory);
-            });
-            renderAccessories();
-        }
-
-        // Захоплення фото
-        function capturePhoto() {
-            const scene = document.querySelector('a-scene');
-            const canvas = scene.components.screenshot.getCanvas('perspective');
-            
-            canvas.toBlob(blob => {
-                const url = URL.createObjectURL(blob);
-                document.getElementById('capturedImage').src = url;
-                document.getElementById('shareModal').classList.add('active');
-            }, 'image/png');
-        }
-
-        // Завантаження фото
-        function downloadPhoto() {
-            const img = document.getElementById('capturedImage');
-            const a = document.createElement('a');
-            a.href = img.src;
-            a.download = `virtual-try-on-${Date.now()}.png`;
-            a.click();
-        }
-
-        // Поділитися фото
-        async function sharePhoto() {
-            const img = document.getElementById('capturedImage');
-            
-            try {
-                const response = await fetch(img.src);
-                const blob = await response.blob();
-                const file = new File([blob], 'virtual-try-on.png', { type: 'image/png' });
-
-                if (navigator.share && navigator.canShare({ files: [file] })) {
-                    await navigator.share({
-                        title: 'Моя віртуальна примірка',
-                        text: 'Подивіться, як мені личить!',
-                        files: [file]
-                    });
-                } else {
-                    // Fallback - копіювати посилання
-                    alert('Ваш браузер не підтримує функцію поділитися. Натомість ви можете завантажити фото.');
-                    downloadPhoto();
-                }
-            } catch (error) {
-                console.error('Помилка при спробі поділитися:', error);
-            }
-        }
-
-        // Закрити модальне вікно
-        function closeShareModal() {
-            document.getElementById('shareModal').classList.remove('active');
-        }
+            // Очищаємо URL
+            URL.revokeObjectURL(url);
+          }, 'image/png');
+        });
+      })
     </script>
-</body>
+    <style>
+      body {
+        margin: 0;
+      }
+      .example-container {
+        overflow: hidden;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+      .options-panel {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 2;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+      }
+      .options-panel img {
+        border: solid 2px;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .options-panel img.selected {
+        border-color: #4CAF50;
+        box-shadow: 0 0 10px #4CAF50;
+      }
+      #captureBtn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #4CAF50;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 10;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      }
+      #captureBtn:hover {
+        background: #45a049;
+        transform: scale(1.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="example-container">
+      <div class="options-panel">
+        <img id="glasses1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E👓%3C/text%3E%3C/svg%3E" title="Окуляри Каміни"/>
+        <img id="glasses2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🕶️%3C/text%3E%3C/svg%3E" title="Звичайні окуляри"/>
+        <img id="hat1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🎩%3C/text%3E%3C/svg%3E" title="Капелюх Джотаро"/>
+        <img id="hat2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🧢%3C/text%3E%3C/svg%3E" title="Кепка"/>
+        <img id="cyberEye" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E👁️%3C/text%3E%3C/svg%3E" title="Кіберочко"/>
+        <img id="cyberJaw" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🦾%3C/text%3E%3C/svg%3E" title="Кіберщелепа"/>
+        <img id="jacket1" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🧥%3C/text%3E%3C/svg%3E" title="Кіберпанк жакет"/>
+        <img id="jacket2" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E👔%3C/text%3E%3C/svg%3E" title="Звичайний жакет"/>
+        <img id="jacket3" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='50' font-size='50'%3E🎸%3C/text%3E%3C/svg%3E" title="Рок жакет"/>
+      </div>
+      
+      <button id="captureBtn">📸</button>
+      
+      <a-scene mindar-face embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-assets>
+          <a-asset-item id="headModel" src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/face-tracking/assets/sparkar/headOccluder.glb"></a-asset-item>
+          
+          <!-- Ваші моделі -->
+          <a-asset-item id="kaminaGlasses" src="./models/kamina_glasses.glb"></a-asset-item>
+          <a-asset-item id="glassesModel" src="./models/glasses.glb"></a-asset-item>
+          <a-asset-item id="jotaroHat" src="./models/jotaro_hat.glb"></a-asset-item>
+          <a-asset-item id="lowerJaw" src="./models/lower_jaw.glb"></a-asset-item>
+          <a-asset-item id="roboticEye" src="./models/robotic_eye.glb"></a-asset-item>
+          <a-asset-item id="cyberpunkJacket" src="./models/cyberpunk_jacket.glb"></a-asset-item>
+          <a-asset-item id="regularJacket" src="./models/jacket.glb"></a-asset-item>
+          <a-asset-item id="rockJacket" src="./models/rock_jacket_mid-poly.glb"></a-asset-item>
+        </a-assets>
+        
+        <a-camera active="false" position="0 0 0"></a-camera>
+        
+        <!-- head occluder -->
+        <a-entity mindar-face-target="anchorIndex: 168">
+          <a-gltf-model mindar-face-occluder position="0 -0.3 0.15" rotation="0 0 0" scale="0.065 0.065 0.065" src="#headModel"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Окуляри на переносиці -->
+        <a-entity mindar-face-target="anchorIndex: 168">
+          <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.01 0.01 0.01" src="#kaminaGlasses" class="glasses1-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        <a-entity mindar-face-target="anchorIndex: 168">
+          <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.01 0.01 0.01" src="#glassesModel" class="glasses2-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Капелюхи на верху голови -->
+        <a-entity mindar-face-target="anchorIndex: 10">
+          <a-gltf-model rotation="0 0 0" position="0 0.5 0" scale="0.01 0.01 0.01" src="#jotaroHat" class="hat1-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        <!-- Тимчасово на ту ж точку для тесту -->
+        <a-entity mindar-face-target="anchorIndex: 10">
+          <a-gltf-model rotation="0 180 0" position="0 0.3 0" scale="0.01 0.01 0.01" src="#jotaroHat" class="hat2-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Кіберочко на лівому оці -->
+        <a-entity mindar-face-target="anchorIndex: 159">
+          <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.01 0.01 0.01" src="#roboticEye" class="cyberEye-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Кіберщелепа на підборідді -->
+        <a-entity mindar-face-target="anchorIndex: 152">
+          <a-gltf-model rotation="0 0 0" position="0 0 0" scale="0.01 0.01 0.01" src="#lowerJaw" class="cyberJaw-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        
+        <!-- Жакети на основі шиї -->
+        <a-entity mindar-face-target="anchorIndex: 5">
+          <a-gltf-model rotation="0 0 0" position="0 -0.5 0" scale="0.01 0.01 0.01" src="#cyberpunkJacket" class="jacket1-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        <a-entity mindar-face-target="anchorIndex: 5">
+          <a-gltf-model rotation="0 0 0" position="0 -0.5 0" scale="0.01 0.01 0.01" src="#regularJacket" class="jacket2-entity" visible="false"></a-gltf-model>
+        </a-entity>
+        <a-entity mindar-face-target="anchorIndex: 5">
+          <a-gltf-model rotation="0 0 0" position="0 -0.5 0" scale="0.01 0.01 0.01" src="#rockJacket" class="jacket3-entity" visible="false"></a-gltf-model>
+        </a-entity>
+      </a-scene>
+    </div>
+  </body>
 </html>
