@@ -13,17 +13,29 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
     <script>
-        const markerIndex = new URLSearchParams(window.location.search).get('marker') || '0';
         document.addEventListener("DOMContentLoaded", async () => {
+            // Визначаємо, який маркер активний ('artem' за замовчуванням)
+            const markerName = new URLSearchParams(window.location.search).get('marker') || 'artem';
+
+            // Вибираємо модель в залежності від активного маркера
+            let modelSrc;
+            if (markerName === 'target') {
+                modelSrc = '../models/logo.glb';
+            } else {
+                modelSrc = '../models/kaneki_dance1.glb';
+            }
+
+            const imageTargetSrc = `../patterns/${markerName}.mind`;
+
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: `../patterns/marker${markerIndex}.mind`
+                imageTargetSrc: imageTargetSrc
             });
             const {renderer, scene, camera} = mindarThree;
             const anchor = mindarThree.addAnchor(0);
             
             const loader = new THREE.GLTFLoader();
-            loader.load(`../models/model${markerIndex}.glb`, (gltf) => {
+            loader.load(modelSrc, (gltf) => {
                 gltf.scene.scale.set(0.1, 0.1, 0.1);
                 anchor.group.add(gltf.scene);
             });
