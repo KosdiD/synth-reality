@@ -1,79 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>AR Simultaneous Tracking</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <style>
-        body { margin: 0; overflow: hidden; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <div style="position: absolute; width: 100%; height: 100%;" id="container"></div>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                container: document.body,
-                imageTargetSrc: "./patterns/combined.mind",
+            const mindarThree = new MINDAR.IMAGE.MindARThree({
+                container: document.querySelector("#container"),
+                imageTargetSrc: "./markers/target.mind",
                 maxTrack: 2
             });
-            const {renderer, scene, camera} = mindarThree;
-            const anchor0 = mindarThree.addAnchor(0);
-            const anchor1 = mindarThree.addAnchor(1);
-            
-            const loader = new THREE.GLTFLoader();
-            const mixer0 = new THREE.AnimationMixer();
-            const mixer1 = new THREE.AnimationMixer();
-            
-            loader.load("./models/kaneki_dance1.glb", (gltf) => {
-                gltf.scene.scale.set(0.4, 0.4, 0.4);
-                anchor0.group.add(gltf.scene);
-                mixer0.clipAction(gltf.animations[0]).play();
-            });
-            
-            loader.load("./models/kaneki_dance2.glb", (gltf) => {
-                gltf.scene.scale.set(0.4, 0.4, 0.4);
-                anchor1.group.add(gltf.scene);
-                mixer1.clipAction(gltf.animations[0]).play();
-            });
-            
-            const listener = new THREE.AudioListener();
-            camera.add(listener);
-            const sound0 = new THREE.PositionalAudio(listener);
-            const sound1 = new THREE.PositionalAudio(listener);
-            const audioLoader = new THREE.AudioLoader();
-            
-            audioLoader.load("./audio/ghoul.mp3", (buffer) => {
-                sound0.setBuffer(buffer);
-                sound0.setRefDistance(1);
-                sound0.setLoop(true);
-                anchor0.group.add(sound0);
-            });
-            
-            audioLoader.load("./audio/background.mp3", (buffer) => {
-                sound1.setBuffer(buffer);
-                sound1.setRefDistance(1);
-                sound1.setLoop(true);
-                anchor1.group.add(sound1);
-            });
-            
-            anchor0.group.addEventListener('targetFound', () => sound0.play());
-            anchor0.group.addEventListener('targetLost', () => sound0.pause());
-            anchor1.group.addEventListener('targetFound', () => sound1.play());
-            anchor1.group.addEventListener('targetLost', () => sound1.pause());
-            
+            const { renderer, scene, camera } = mindarThree;
+
             const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
             scene.add(light);
-            
+
+            const listener = new THREE.AudioListener();
+            camera.add(listener);
+
+            const mixers = [];
+            const loader = new THREE.GLTFLoader();
+
+            const anchor1 = mindarThree.addAnchor(0);
+            loader.load("./models/kaneki_dance1.glb", (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(0.1, 0.1, 0.1);
+                anchor1.group.add(model);
+                const mixer = new THREE.AnimationMixer(model);
+                mixers.push(mixer);
+                const action = mixer.clipAction(gltf.animations[0]);
+                action.play();
+                const sound = new THREE.PositionalAudio(listener);
+                new THREE.AudioLoader().load('./audio/ukraine.mp3', (buffer) => {
+                    sound.setBuffer(buffer);
+                    sound.setRefDistance(20);
+                    sound.setLoop(true);
+                    sound.play();
+                });
+                model.add(sound);
+            });
+
+            const anchor2 = mindarThree.addAnchor(1);
+            loader.load("./models/kaneki_dance2.glb", (gltf) => {
+                const model = gltf.scene;
+                model.scale.set(0.1, 0.1, 0.1);
+                anchor2.group.add(model);
+                const mixer = new THREE.AnimationMixer(model);
+                mixers.push(mixer);
+                const action = mixer.clipAction(gltf.animations[0]);
+                action.play();
+                const sound = new THREE.PositionalAudio(listener);
+                new THREE.AudioLoader().load('./audio/background.mp3', (buffer) => {
+                    sound.setBuffer(buffer);
+                    sound.setRefDistance(20);
+                    sound.setLoop(true);
+                    sound.play();
+                });
+                model.add(sound);
+            });
+
             const clock = new THREE.Clock();
             await mindarThree.start();
             renderer.setAnimationLoop(() => {
                 const delta = clock.getDelta();
-                mixer0.update(delta);
-                mixer1.update(delta);
+                mixers.forEach(mixer => mixer.update(delta));
                 renderer.render(scene, camera);
             });
         });
