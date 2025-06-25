@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 8 | Інтерактивна Візитівка (v2)</title>
+    <title>Завдання 8 | Інтерактивна Візитівка (CSS UI)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script type="importmap">
@@ -21,20 +21,69 @@
             background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
             text-align: center; font-family: Arial, sans-serif; z-index: 100;
         }
+
+        /* *** НОВЕ ***: Стилі для контейнера з кнопками */
+        #control-buttons {
+            display: none; /* Початково приховані */
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 10px; /* Відстань між кнопками */
+        }
+        
+        /* *** НОВЕ ***: Стилі для самих кнопок */
+        #control-buttons button {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: white;
+            background-color: rgba(0, 89, 179, 0.8);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #control-buttons button:active {
+            background-color: rgba(0, 60, 120, 0.9);
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
+    <div class="ar-container"></div>
+    
     <div id="info-panel">
         <h3>Контактна інформація</h3>
         <p>Email: student@example.com</p>
         <p>Телефон: +380 00 000 00 00</p>
+        <button id="close-info-btn">Закрити</button> </div>
+
+    <div id="control-buttons">
+        <button id="model-btn">Змінити модель</button>
+        <button id="audio-btn">Змінити музику</button>
+        <button id="video-btn">Показати відео</button>
+        <button id="info-btn">Інформація</button>
     </div>
-    <div class="ar-container"></div>
+
     <script type="module">
         import * as THREE from "three";
         import { GLTFLoader } from "GLTFLoader";
 
         document.addEventListener("DOMContentLoaded", async () => {
+            // Отримуємо посилання на елементи інтерфейсу
+            const controlButtons = document.getElementById('control-buttons');
+            const infoPanel = document.getElementById('info-panel');
+            const modelBtn = document.getElementById('model-btn');
+            const audioBtn = document.getElementById('audio-btn');
+            const videoBtn = document.getElementById('video-btn');
+            const infoBtn = document.getElementById('info-btn');
+            const closeInfoBtn = document.getElementById('close-info-btn');
+
+
             const { MindARThree } = window.MINDAR.IMAGE;
             const mindarThree = new MindARThree({
                 container: document.querySelector(".ar-container"),
@@ -57,28 +106,18 @@
             const anchor = mindarThree.addAnchor(0);
             anchor.group.add(sound);
 
-            const modelPaths = [
-                './models/kaneki_dance1.glb',
-                './models/kaneki_dance2.glb',
-                './models/logo.glb'
-            ];
+            const modelPaths = ['./models/kaneki_dance1.glb', './models/kaneki_dance2.glb', './models/logo.glb'];
             let currentModelIndex = 0;
             let currentModel = null;
 
-            const audioPaths = [
-                './audio/ukraine.mp3',
-                './audio/ghoul.mp3',
-                './audio/background.mp3'
-            ];
+            const audioPaths = ['./audio/ukraine.mp3', './audio/ghoul.mp3', './audio/background.mp3'];
             let currentAudioIndex = 0;
 
             const loader = new GLTFLoader();
 
             const loadModel = (index) => {
                 const path = modelPaths[index];
-                if (currentModel) {
-                    anchor.group.remove(currentModel);
-                }
+                if (currentModel) anchor.group.remove(currentModel);
                 mixer = null;
                 loader.load(path, (gltf) => {
                     currentModel = gltf.scene;
@@ -87,8 +126,7 @@
                     anchor.group.add(currentModel);
                     if (gltf.animations.length > 0) {
                         mixer = new THREE.AnimationMixer(gltf.scene);
-                        const action = mixer.clipAction(gltf.animations[0]);
-                        action.play();
+                        mixer.clipAction(gltf.animations[0]).play();
                     }
                 });
             };
@@ -99,18 +137,13 @@
                     sound.setBuffer(buffer);
                     sound.setLoop(true);
                     sound.setVolume(0.5);
-                    sound.setRefDistance(20);
-                    if (playOnLoad) {
-                        sound.play();
-                    }
+                    if (playOnLoad) sound.play();
                 });
             };
 
             const video = document.createElement("video");
             video.src = "./videos/intro.mp4";
-            video.muted = true;
-            video.loop = true;
-            video.playsInline = true;
+            video.muted = true; video.loop = true; video.playsInline = true;
             const videoPlane = new THREE.Mesh(
                 new THREE.PlaneGeometry(1, 0.75),
                 new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) })
@@ -119,88 +152,58 @@
             videoPlane.visible = false;
             anchor.group.add(videoPlane);
             
-            const interactiveObjects = [];
-            const createButton = (position, color, name) => {
-                const button = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.15, 0.15, 0.15),
-                    new THREE.MeshStandardMaterial({ color: color })
-                );
-                button.position.set(...position);
-                button.userData.name = name;
-                interactiveObjects.push(button);
-                return button;
-            };
-
-            const modelButton = createButton([0.6, 0.4, 0], 0xffaa00, 'modelButton');
-            const audioButton = createButton([0.6, 0.15, 0], 0x00aaff, 'audioButton');
-            const videoButton = createButton([0.6, -0.15, 0], 0x00ff00, 'videoButton');
-            const infoButton = createButton([0.6, -0.4, 0], 0xff0000, 'infoButton');
-            anchor.group.add(modelButton, audioButton, videoButton, infoButton);
-
+            // *** ЗМІНА ***: Логіка відображення інтерфейсу
             anchor.onTargetFound = () => {
                 sound.play();
+                controlButtons.style.display = 'flex'; // Показуємо кнопки
             };
             anchor.onTargetLost = () => {
                 sound.pause();
                 video.pause();
                 videoPlane.visible = false;
+                controlButtons.style.display = 'none'; // Ховаємо кнопки
+                infoPanel.style.display = 'none'; // Ховаємо й інфо-панель
             };
 
-            document.body.addEventListener("click", (e) => {
-                if (!anchor.found) return;
+            // *** ВИДАЛЕНО ***: Весь блок з document.body.addEventListener("click", ...) та Raycaster видалено.
 
-                const mouse = new THREE.Vector2(
-                    (e.clientX / window.innerWidth) * 2 - 1,
-                    -(e.clientY / window.innerHeight) * 2 + 1
-                );
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(interactiveObjects);
+            // *** НОВЕ ***: Прості обробники подій для HTML-кнопок
+            modelBtn.addEventListener('click', () => {
+                currentModelIndex = (currentModelIndex + 1) % modelPaths.length;
+                loadModel(currentModelIndex);
+            });
 
-                if (intersects.length > 0) {
-                    const clickedObject = intersects[0].object; // *** ЗМІНА ***: Отримуємо об'єкт, на який клікнули
-                    const name = clickedObject.userData.name;
+            audioBtn.addEventListener('click', () => {
+                currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
+                loadAudio(currentAudioIndex, true);
+            });
 
-                    // *** ЗМІНА ***: Додаємо візуальний відгук для кнопки
-                    const originalScale = clickedObject.scale.clone();
-                    clickedObject.scale.multiplyScalar(1.2);
-                    setTimeout(() => {
-                        clickedObject.scale.copy(originalScale);
-                    }, 200);
-
-                    switch (name) {
-                        case 'modelButton':
-                            currentModelIndex = (currentModelIndex + 1) % modelPaths.length;
-                            loadModel(currentModelIndex);
-                            break;
-                        case 'audioButton':
-                            currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
-                            loadAudio(currentAudioIndex, true);
-                            break;
-                        case 'videoButton':
-                            videoPlane.visible = !videoPlane.visible;
-                            videoPlane.visible ? video.play() : video.pause();
-                            break;
-                        case 'infoButton':
-                            const panel = document.getElementById('info-panel');
-                            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-                            break;
-                    }
+            videoBtn.addEventListener('click', () => {
+                videoPlane.visible = !videoPlane.visible;
+                if (videoPlane.visible) {
+                    video.play();
+                    videoBtn.textContent = 'Сховати відео';
+                } else {
+                    video.pause();
+                    videoBtn.textContent = 'Показати відео';
                 }
             });
+
+            infoBtn.addEventListener('click', () => {
+                infoPanel.style.display = 'block';
+            });
+
+            closeInfoBtn.addEventListener('click', () => {
+                infoPanel.style.display = 'none';
+            });
             
-            // *** ЗМІНА ***: Запускаємо AR-середовище ПЕРЕД першим завантаженням ресурсів
             await mindarThree.start();
-            
-            // *** ЗМІНА ***: Тепер, коли все готово, завантажуємо початкові модель та аудіо
             loadModel(currentModelIndex);
             loadAudio(currentAudioIndex);
 
             renderer.setAnimationLoop(() => {
                 const delta = clock.getDelta();
-                if (mixer) {
-                    mixer.update(delta);
-                }
+                if (mixer) mixer.update(delta);
                 renderer.render(scene, camera);
             });
         });
