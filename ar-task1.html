@@ -9,14 +9,14 @@
     </style>
 </head>
 <body>
-    <video id="video" src="../videos/ocean.mp4" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
+    <video id="video" src="./videos/ocean.mp4" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
     <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: "../patterns/target.mind"
+                imageTargetSrc: "./patterns/target.mind"
             });
             const {renderer, scene, camera} = mindarThree;
             const anchor = mindarThree.addAnchor(0);
