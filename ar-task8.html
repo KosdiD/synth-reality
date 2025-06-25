@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 8 | Фінальна версія</title>
+    <title>Інтерактивна Візитівка</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
     <script type="importmap">
@@ -21,6 +21,15 @@
             background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
             text-align: center; font-family: Arial, sans-serif; z-index: 100;
         }
+        #model-controls {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.5); color: white; padding: 10px; border-radius: 5px;
+            display: flex; gap: 10px; z-index: 100;
+        }
+        #model-controls button {
+            padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;
+            background: #4CAF50; color: white;
+        }
     </style>
 </head>
 <body>
@@ -29,7 +38,15 @@
         <p>Email: student@example.com</p>
         <p>Телефон: +380 00 000 00 00</p>
     </div>
+    
+    <div id="model-controls">
+        <button id="prev-model">← Попередня модель</button>
+        <button id="next-model">Наступна модель →</button>
+        <button id="toggle-music">Вимкнети музику</button>
+    </div>
+    
     <div class="ar-container"></div>
+
     <script type="module">
         import * as THREE from "three";
         import { GLTFLoader } from "GLTFLoader";
@@ -42,132 +59,157 @@
             });
             const { renderer, scene, camera } = mindarThree;
 
-            // --- Загальне налаштування сцени ---
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene.add(ambientLight);
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
             directionalLight.position.set(0, 5, 10);
             scene.add(directionalLight);
+
             const anchor = mindarThree.addAnchor(0);
-
-            // --- Налаштування для анімації ---
-            const clock = new THREE.Clock();
-            let mixer;
-
-            // --- Налаштування аудіо ---
             const listener = new THREE.AudioListener();
             camera.add(listener);
-            const audioLoader = new THREE.AudioLoader();
+
+            // Аудіо
             const bgAudio = new THREE.Audio(listener);
-            const audioPaths = ['./audio/background.mp3', './audio/ukraine.mp3', './audio/ghoul.mp3'];
-            let currentAudioIndex = 0;
-            audioLoader.load(audioPaths[currentAudioIndex], (b) => {
-                bgAudio.setBuffer(b); bgAudio.setLoop(true); bgAudio.setVolume(0.3);
+            new THREE.AudioLoader().load('./audio/background.mp3', (b) => { 
+                bgAudio.setBuffer(b); 
+                bgAudio.setLoop(true); 
+                bgAudio.setVolume(0.2); 
             });
-
-            // --- Налаштування моделей ---
-            const modelLoader = new GLTFLoader();
-            const models = [
-                { path: './models/kaneki_dance1.glb', scale: 0.4, position: [0, -0.8, 0] },
-                { path: './models/kaneki_dance2.glb', scale: 0.4, position: [0, -0.8, 0] },
-                { path: './models/logo.glb', scale: 0.1, position: [0, -0.5, 0] }
-            ];
-            let currentModelIndex = 0;
-            let currentModel = null;
             
-            const loadModel = (index) => {
-                const modelData = models[index];
-                if (currentModel) anchor.group.remove(currentModel);
-                mixer = null; // Скидаємо мікшер для нової моделі
-                modelLoader.load(modelData.path, (gltf) => {
-                    currentModel = gltf.scene;
-                    currentModel.scale.set(modelData.scale, modelData.scale, modelData.scale);
-                    currentModel.position.set(...modelData.position);
-                    anchor.group.add(currentModel);
-                    if (gltf.animations.length > 0) {
-                        mixer = new THREE.AnimationMixer(gltf.scene);
-                        mixer.clipAction(gltf.animations[0]).play();
-                    }
-                });
-            };
-            loadModel(currentModelIndex); // Завантажуємо початкову модель
-
-            // --- Налаштування відео ---
+            // Відео
             const video = document.createElement("video");
             video.src = "./videos/intro.mp4";
-            video.muted = true; video.loop = true; video.playsInline = true;
-            const videoPlane = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) }));
-            videoPlane.position.set(0, 0.2, -0.1); // Трохи підняли відео
+            video.muted = true;
+            video.loop = true;
+            video.playsInline = true;
+            const videoPlane = new THREE.Mesh(
+                new THREE.PlaneGeometry(1, 0.75), 
+                new THREE.MeshBasicMaterial({ map: new THREE.VideoTexture(video) })
+            );
             videoPlane.visible = false;
             anchor.group.add(videoPlane);
             
-            // --- Створення 3D-кнопок ---
+            // 3D моделі та анімація
+            const loader = new GLTFLoader();
+            const clock = new THREE.Clock();
+            let currentModelIndex = 0;
+            let mixer = null;
+            let currentModel = null;
+            
+            const models = [
+                { path: "./models/kaneki_dance1.glb", scale: 0.7, position: [0, -1.2, 0] },
+                { path: "./models/kaneki_dance2.glb", scale: 0.7, position: [0, -1.2, 0] },
+                { path: "./models/logo.glb", scale: 0.08, position: [-0.3, 0, 0] }
+            ];
+            
+            function loadModel(index) {
+                if (currentModel) {
+                    anchor.group.remove(currentModel);
+                }
+                
+                loader.load(models[index].path, (gltf) => {
+                    currentModel = gltf.scene;
+                    currentModel.scale.set(models[index].scale, models[index].scale, models[index].scale);
+                    currentModel.position.set(...models[index].position);
+                    anchor.group.add(currentModel);
+                    
+                    if (gltf.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(currentModel);
+                        mixer.clipAction(gltf.animations[0]).play();
+                    } else {
+                        mixer = null;
+                    }
+                });
+            }
+            
+            // Початкове завантаження моделі
+            loadModel(currentModelIndex);
+            
+            // Інтерактивні кнопки
             const interactiveObjects = [];
+            
             const createButton = (position, color, name) => {
-                const button = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.15), new THREE.MeshStandardMaterial({ color: color }));
+                const button = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.15, 0.15, 0.15), 
+                    new THREE.MeshStandardMaterial({ color: color })
+                );
                 button.position.set(...position);
                 button.userData.name = name;
                 interactiveObjects.push(button);
                 return button;
             };
-
-            const modelButton = createButton([-0.4, -1, 0], 0xffa500, 'modelButton');    // Помаранчевий
-            const audioButton = createButton([-0.1, -1, 0], 0x0000ff, 'audioButton');    // Синій
-            const videoButton = createButton([0.2, -1, 0], 0x00ff00, 'videoButton');    // Зелений
-            const infoButton = createButton([0.5, -1, 0], 0xffff00, 'infoButton');     // Жовтий
-            anchor.group.add(modelButton, audioButton, videoButton, infoButton);
-
-            // --- Обробники подій маркера ---
-            anchor.onTargetFound = () => {
-                if (bgAudio.buffer && !bgAudio.isPlaying) bgAudio.play();
-            };
-            anchor.onTargetLost = () => bgAudio.pause();
-
-            // --- Обробник кліків ---
+            
+            const videoButton = createButton([0.4, 0.3, 0], 0x0000ff, 'videoButton');
+            const websiteButton = createButton([0.4, 0, 0], 0x00ff00, 'websiteButton');
+            const infoButton = createButton([0.4, -0.3, 0], 0xff0000, 'infoButton');
+            anchor.group.add(videoButton, websiteButton, infoButton);
+            
+            // Обробники подій
             document.body.addEventListener("click", (e) => {
                 if (!anchor.found) return;
-                const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+                
+                const mouse = new THREE.Vector2(
+                    (e.clientX / window.innerWidth) * 2 - 1, 
+                    -(e.clientY / window.innerHeight) * 2 + 1
+                );
                 const raycaster = new THREE.Raycaster();
                 raycaster.setFromCamera(mouse, camera);
                 const intersects = raycaster.intersectObjects(interactiveObjects);
-
+                
                 if (intersects.length > 0) {
                     const name = intersects[0].object.userData.name;
                     switch (name) {
-                        case 'modelButton':
-                            currentModelIndex = (currentModelIndex + 1) % models.length;
-                            loadModel(currentModelIndex);
-                            break;
-                        case 'audioButton':
-                            bgAudio.stop();
-                            currentAudioIndex = (currentAudioIndex + 1) % audioPaths.length;
-                            audioLoader.load(audioPaths[currentAudioIndex], (b) => {
-                                bgAudio.setBuffer(b);
-                                bgAudio.play();
-                            });
-                            break;
                         case 'videoButton':
                             videoPlane.visible = !videoPlane.visible;
                             videoPlane.visible ? video.play() : video.pause();
                             break;
+                        case 'websiteButton':
+                            window.open('https://github.com', '_blank');
+                            break;
                         case 'infoButton':
-                            document.getElementById('info-panel').style.display = 'block';
+                            const panel = document.getElementById('info-panel');
+                            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
                             break;
                     }
-                } else {
-                    // Якщо клік не по кнопці, ховаємо панель інформації
-                    document.getElementById('info-panel').style.display = 'none';
                 }
             });
-
-            // --- Запуск ---
+            
+            // Керування моделями
+            document.getElementById('prev-model').addEventListener('click', () => {
+                currentModelIndex = (currentModelIndex - 1 + models.length) % models.length;
+                loadModel(currentModelIndex);
+            });
+            
+            document.getElementById('next-model').addEventListener('click', () => {
+                currentModelIndex = (currentModelIndex + 1) % models.length;
+                loadModel(currentModelIndex);
+            });
+            
+            // Керування аудіо
+            const toggleMusicBtn = document.getElementById('toggle-music');
+            toggleMusicBtn.addEventListener('click', () => {
+                if (bgAudio.isPlaying) {
+                    bgAudio.pause();
+                    toggleMusicBtn.textContent = 'Увімкнути музику';
+                } else {
+                    bgAudio.play();
+                    toggleMusicBtn.textContent = 'Вимкнути музику';
+                }
+            });
+            
+            // Запуск AR
+            anchor.onTargetFound = () => {
+                bgAudio.play();
+            };
+            anchor.onTargetLost = () => {
+                bgAudio.pause();
+            };
+            
             await mindarThree.start();
             renderer.setAnimationLoop(() => {
-                // ВАЖЛИВО: Оновлюємо анімацію на кожному кадрі
                 const delta = clock.getDelta();
-                if (mixer) {
-                    mixer.update(delta);
-                }
+                if (mixer) mixer.update(delta);
                 renderer.render(scene, camera);
             });
         });
