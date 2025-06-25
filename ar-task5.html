@@ -17,7 +17,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: "../patterns/combined.mind",
+                imageTargetSrc: "./patterns/combined.mind",
                 maxTrack: 2
             });
             const {renderer, scene, camera} = mindarThree;
@@ -28,13 +28,13 @@
             const mixer0 = new THREE.AnimationMixer();
             const mixer1 = new THREE.AnimationMixer();
             
-            loader.load("../models/kaneki_dance1.glb", (gltf) => {
+            loader.load("./models/kaneki_dance1.glb", (gltf) => {
                 gltf.scene.scale.set(0.4, 0.4, 0.4);
                 anchor0.group.add(gltf.scene);
                 mixer0.clipAction(gltf.animations[0]).play();
             });
             
-            loader.load("../models/kaneki_dance2.glb", (gltf) => {
+            loader.load("./models/kaneki_dance2.glb", (gltf) => {
                 gltf.scene.scale.set(0.4, 0.4, 0.4);
                 anchor1.group.add(gltf.scene);
                 mixer1.clipAction(gltf.animations[0]).play();
@@ -46,14 +46,14 @@
             const sound1 = new THREE.PositionalAudio(listener);
             const audioLoader = new THREE.AudioLoader();
             
-            audioLoader.load("../audio/ghoul.mp3", (buffer) => {
+            audioLoader.load("./audio/ghoul.mp3", (buffer) => {
                 sound0.setBuffer(buffer);
                 sound0.setRefDistance(1);
                 sound0.setLoop(true);
                 anchor0.group.add(sound0);
             });
             
-            audioLoader.load("../audio/background.mp3", (buffer) => {
+            audioLoader.load("./audio/background.mp3", (buffer) => {
                 sound1.setBuffer(buffer);
                 sound1.setRefDistance(1);
                 sound1.setLoop(true);
