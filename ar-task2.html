@@ -15,7 +15,7 @@
         document.addEventListener("DOMContentLoaded", async () => {
             const mindarThree = new window.MINDAR.IMAGE.MindARThree({
                 container: document.body,
-                imageTargetSrc: "../patterns/target.mind"
+                imageTargetSrc: "./patterns/target.mind"
             });
             const {renderer, scene, camera} = mindarThree;
             const anchor = mindarThree.addAnchor(0);
