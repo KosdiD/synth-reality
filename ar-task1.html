@@ -2,37 +2,43 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Video Scene</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Video Scene</title>
     <style>
         body { margin: 0; overflow: hidden; }
+        #container { width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
+    <div id="container"></div>
     <video id="video" src="./videos/ocean.mp4" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", async () => {
-            const mindarThree = new window.MINDAR.IMAGE.MindARThree({
-                container: document.body,
-                imageTargetSrc: "./patterns/target.mind"
-            });
-            const {renderer, scene, camera} = mindarThree;
-            const anchor = mindarThree.addAnchor(0);
-            
-            const video = document.getElementById("video");
-            const texture = new THREE.VideoTexture(video);
-            const geometry = new THREE.PlaneGeometry(1, 0.562);
-            const material = new THREE.MeshBasicMaterial({map: texture});
-            const plane = new THREE.Mesh(geometry, material);
-            anchor.group.add(plane);
-            
-            await mindarThree.start();
-            video.play();
-            renderer.setAnimationLoop(() => {
-                renderer.render(scene, camera);
-            });
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('container').appendChild(renderer.domElement);
+        
+        const video = document.getElementById('video');
+        video.play();
+        const texture = new THREE.VideoTexture(video);
+        const geometry = new THREE.PlaneGeometry(16, 9);
+        const material = new THREE.MeshBasicMaterial({map: texture});
+        const plane = new THREE.Mesh(geometry, material);
+        scene.add(plane);
+        
+        camera.position.z = 10;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
