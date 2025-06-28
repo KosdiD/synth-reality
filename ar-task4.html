@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Сцена 1: Танець Канекі</title>
+    <title>AR: Два маркери, одна сцена</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@latest/dist/mindar-image-three.prod.js"></script>
@@ -17,7 +17,6 @@
     </script>
 
     <style>
-        /* Стилі для розгортання AR-контейнера на весь екран */
         body { margin: 0; }
         .ar-container {
             width: 100vw;
@@ -32,74 +31,81 @@
     <div class="ar-container"></div>
 
     <script type="module">
-        // Імпорт необхідних модулів з three.js
         import * as THREE from "three";
         import { GLTFLoader } from "GLTFLoader";
 
         document.addEventListener("DOMContentLoaded", () => {
             const startAR = async () => {
+                // 1. Ініціалізація MindAR з об'єднаним файлом маркерів
                 const { MindARThree } = window.MINDAR.IMAGE;
                 const mindarThree = new MindARThree({
                     container: document.querySelector(".ar-container"),
-                    imageTargetSrc: "./markers/artem.mind", 
+                    imageTargetSrc: "./markers/combined.mind", // ШЛЯХ ДО ОБ'ЄДНАНОГО ФАЙЛУ
+                    maxTrack: 2, // Вказуємо, що потрібно відстежувати до 2-х маркерів одночасно
                 });
                 const { renderer, scene, camera } = mindarThree;
 
-                // 2. Додавання освітлення
-                // Навколишнє світло, щоб освітити модель з усіх боків
+                // 2. Додавання освітлення на сцену
                 const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
                 scene.add(ambientLight);
-                // Спрямоване світло, що імітує сонце і створює тіні
                 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
                 directionalLight.position.set(0, 5, 10);
                 scene.add(directionalLight);
 
-                // 3. Завантаження моделі
+                // 3. Налаштування для завантаження моделей та анімації
                 const loader = new GLTFLoader();
-                const clock = new THREE.Clock(); // Годинник для анімації
-                let mixer; // Змінна для керування анімацією
+                const clock = new THREE.Clock();
+                let mixer1; // Мікшер тільки для першої моделі, оскільки друга не анімована
 
-                // 4. Створення якоря для маркера
-                // Індекс 0 означає перший маркер у файлі .mind
-                const anchor = mindarThree.addAnchor(0);
-
+                // 4. Створення якоря та завантаження першої моделі (для маркера з індексом 0)
+                const anchor1 = mindarThree.addAnchor(0);
                 loader.load(
-                    "./models/kaneki_dance1.glb", // ШЛЯХ ДО ВАШОЇ ПЕРШОЇ МОДЕЛІ
+                    "./models/kaneki_dance1.glb",
                     (gltf) => {
-                        // Модель успішно завантажена
                         const model = gltf.scene;
                         model.scale.set(0.7, 0.7, 0.7);
                         model.position.set(0, -1.2, 0);
+                        anchor1.group.add(model); // Прив'язуємо модель до першого якоря
 
-                        // Додаємо модель до групи якоря. Тепер вона буде з'являтися на маркері.
-                        anchor.group.add(model);
-
-                        // Перевіряємо, чи є у моделі анімації
                         if (gltf.animations.length > 0) {
-                            mixer = new THREE.AnimationMixer(model);
-                            // Запускаємо першу анімацію
-                            const action = mixer.clipAction(gltf.animations[0]);
+                            mixer1 = new THREE.AnimationMixer(model);
+                            const action = mixer1.clipAction(gltf.animations[0]);
                             action.play();
                         }
-                    },
-                    undefined, // Функція для відстеження прогресу завантаження (не використовується)
-                    (error) => {
-                        // Обробка помилки, якщо модель не завантажилася
-                        console.error("Помилка завантаження моделі:", error);
                     }
                 );
                 
-                // 5. Запуск AR
+                // Додаємо обробники подій для відстеження (необов'язково, але корисно для налагодження)
+                anchor1.onTargetFound = () => { console.log("Знайдено маркер 1"); }
+                anchor1.onTargetLost = () => { console.log("Втрачено маркер 1"); }
+
+
+                // 5. Створення якоря та завантаження другої моделі (для маркера з індексом 1)
+                const anchor2 = mindarThree.addAnchor(1);
+                loader.load(
+                    "./models/logo.glb",
+                    (gltf) => {
+                        const model = gltf.scene;
+                        model.scale.set(0.1, 0.1, 0.1);
+                        model.position.set(0, -0.2, 0);
+                        anchor2.group.add(model); // Прив'язуємо модель до другого якоря
+                    }
+                );
+
+                anchor2.onTargetFound = () => { console.log("Знайдено маркер 2"); }
+                anchor2.onTargetLost = () => { console.log("Втрачено маркер 2"); }
+
+
+                // 6. Запуск AR-сесії
                 await mindarThree.start();
 
-                // 6. Цикл рендерингу
+                // 7. Запуск циклу рендерингу
                 renderer.setAnimationLoop(() => {
-                    const delta = clock.getDelta(); // Час, що минув з попереднього кадру
-                    // Оновлюємо анімацію, якщо вона є
-                    if (mixer) {
-                        mixer.update(delta);
+                    const delta = clock.getDelta();
+                    // Оновлюємо анімацію першої моделі
+                    if (mixer1) {
+                        mixer1.update(delta);
                     }
-                    // Рендеримо сцену
                     renderer.render(scene, camera);
                 });
             };
