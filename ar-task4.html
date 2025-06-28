@@ -2,9 +2,11 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Завдання 4 | Анімація та Світло</title>
+    <title>Сцена 1: Танець Канекі</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@latest/dist/mindar-image-three.prod.js"></script>
+
     <script type="importmap">
         {
             "imports": {
@@ -13,76 +15,96 @@
             }
         }
     </script>
+
     <style>
+        /* Стилі для розгортання AR-контейнера на весь екран */
         body { margin: 0; }
-        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+        .ar-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
     </style>
 </head>
 <body>
     <div class="ar-container"></div>
+
     <script type="module">
+        // Імпорт необхідних модулів з three.js
         import * as THREE from "three";
         import { GLTFLoader } from "GLTFLoader";
 
-        // ЗМІНЕНО: Ініціалізація AR запускається з невеликою затримкою,
-        // щоб уникнути "умови гонки" під час завантаження сторінки.
         document.addEventListener("DOMContentLoaded", () => {
             const startAR = async () => {
                 const { MindARThree } = window.MINDAR.IMAGE;
                 const mindarThree = new MindARThree({
                     container: document.querySelector(".ar-container"),
-                    imageTargetSrc: "./patterns/combined.mind",
-                    maxTrack: 2
+                    imageTargetSrc: "./markers/artem.mind", 
                 });
                 const { renderer, scene, camera } = mindarThree;
 
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                // 2. Додавання освітлення
+                // Навколишнє світло, щоб освітити модель з усіх боків
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
                 scene.add(ambientLight);
-                
+                // Спрямоване світло, що імітує сонце і створює тіні
                 const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
                 directionalLight.position.set(0, 5, 10);
                 scene.add(directionalLight);
 
+                // 3. Завантаження моделі
                 const loader = new GLTFLoader();
-                const clock = new THREE.Clock();
-                let mixer1;
+                const clock = new THREE.Clock(); // Годинник для анімації
+                let mixer; // Змінна для керування анімацією
 
-                const anchor1 = mindarThree.addAnchor(0);
-                loader.load("./models/kaneki_dance1.glb", (gltf) => {
-                    gltf.scene.scale.set(0.7, 0.7, 0.7);
-                    gltf.scene.position.set(0, -1.2, 0);
-                    anchor1.group.add(gltf.scene);
+                // 4. Створення якоря для маркера
+                // Індекс 0 означає перший маркер у файлі .mind
+                const anchor = mindarThree.addAnchor(0);
 
-                    if (gltf.animations.length > 0) {
-                        mixer1 = new THREE.AnimationMixer(gltf.scene);
-                        const action = mixer1.clipAction(gltf.animations[0]);
-                        action.play();
+                loader.load(
+                    "./models/kaneki_dance1.glb", // ШЛЯХ ДО ВАШОЇ ПЕРШОЇ МОДЕЛІ
+                    (gltf) => {
+                        // Модель успішно завантажена
+                        const model = gltf.scene;
+                        model.scale.set(0.7, 0.7, 0.7);
+                        model.position.set(0, -1.2, 0);
+
+                        // Додаємо модель до групи якоря. Тепер вона буде з'являтися на маркері.
+                        anchor.group.add(model);
+
+                        // Перевіряємо, чи є у моделі анімації
+                        if (gltf.animations.length > 0) {
+                            mixer = new THREE.AnimationMixer(model);
+                            // Запускаємо першу анімацію
+                            const action = mixer.clipAction(gltf.animations[0]);
+                            action.play();
+                        }
+                    },
+                    undefined, // Функція для відстеження прогресу завантаження (не використовується)
+                    (error) => {
+                        // Обробка помилки, якщо модель не завантажилася
+                        console.error("Помилка завантаження моделі:", error);
                     }
-                });
-                anchor1.onTargetFound = () => { console.log("Знайдено маркер 1 (artem)"); }
-                anchor1.onTargetLost = () => { console.log("Втрачено маркер 1 (artem)"); }
-
-                const anchor2 = mindarThree.addAnchor(1);
-                loader.load("./models/logo.glb", (gltf) => {
-                    gltf.scene.scale.set(0.1, 0.1, 0.1);
-                    gltf.scene.position.set(0, -2.2, 0);
-                    anchor2.group.add(gltf.scene);
-                });
-                anchor2.onTargetFound = () => { console.log("Знайдено маркер 2 (target)"); }
-                anchor2.onTargetLost = () => { console.log("Втрачено маркер 2 (target)"); }
-
+                );
+                
+                // 5. Запуск AR
                 await mindarThree.start();
+
+                // 6. Цикл рендерингу
                 renderer.setAnimationLoop(() => {
-                    const delta = clock.getDelta();
-                    if (mixer1) {
-                        mixer1.update(delta);
+                    const delta = clock.getDelta(); // Час, що минув з попереднього кадру
+                    // Оновлюємо анімацію, якщо вона є
+                    if (mixer) {
+                        mixer.update(delta);
                     }
+                    // Рендеримо сцену
                     renderer.render(scene, camera);
                 });
             };
 
-            // Запускаємо AR з невеликою затримкою
-            setTimeout(startAR, 100);
+            startAR();
         });
     </script>
 </body>
