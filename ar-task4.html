@@ -1,117 +1,177 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
-    <meta charset="UTF-8" />
-    <title>AR: Два маркери, одна сцена</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-three.prod.js"></script>
+    <meta charset="UTF-8" />
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
-                "GLTFLoader": "https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js"
-            }
-        }
-    </script>
+    <title>Завдання 4 | Анімація та Світло</title>
 
-    <style>
-        body { margin: 0; }
-        .ar-container {
-            width: 100vw;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@latest/dist/mindar-image-three.prod.js"></script>
+
+    <script type="importmap">
+
+        {
+
+            "imports": {
+
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+
+                "GLTFLoader": "https://unpkg.com/three@0.150.1/examples/jsm/loaders/GLTFLoader.js"
+
+            }
+
+        }
+
+    </script>
+
+    <style>
+
+        body { margin: 0; }
+
+        .ar-container { width: 100vw; height: 100vh; position: fixed; top: 0; left: 0; }
+
+    </style>
+
 </head>
+
 <body>
-    <div class="ar-container"></div>
 
-    <script type="module">
-        import * as THREE from "three";
-        import { GLTFLoader } from "GLTFLoader";
+    <div class="ar-container"></div>
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const startAR = async () => {
-                // 1. Ініціалізація MindAR з об'єднаним файлом маркерів
-                const { MindARThree } = window.MINDAR.IMAGE;
-                const mindarThree = new MindARThree({
-                    container: document.querySelector(".ar-container"),
-                    imageTargetSrc: "./markers/combined.mind", // ШЛЯХ ДО ОБ'ЄДНАНОГО ФАЙЛУ
-                    maxTrack: 2, // Вказуємо, що потрібно відстежувати до 2-х маркерів одночасно
-                });
-                const { renderer, scene, camera } = mindarThree;
+    <script type="module">
 
-                // 2. Додавання освітлення на сцену
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-                scene.add(ambientLight);
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-                directionalLight.position.set(0, 5, 10);
-                scene.add(directionalLight);
+        import * as THREE from "three";
 
-                // 3. Налаштування для завантаження моделей та анімації
-                const loader = new GLTFLoader();
-                const clock = new THREE.Clock();
-                let mixer1; // Мікшер тільки для першої моделі, оскільки друга не анімована
-
-                // 4. Створення якоря та завантаження першої моделі (для маркера з індексом 0)
-                const anchor1 = mindarThree.addAnchor(0);
-                loader.load(
-                    "./models/kaneki_dance1.glb",
-                    (gltf) => {
-                        const model = gltf.scene;
-                        model.scale.set(0.7, 0.7, 0.7);
-                        model.position.set(0, -1.2, 0);
-                        anchor1.group.add(model); // Прив'язуємо модель до першого якоря
-
-                        if (gltf.animations.length > 0) {
-                            mixer1 = new THREE.AnimationMixer(model);
-                            const action = mixer1.clipAction(gltf.animations[0]);
-                            action.play();
-                        }
-                    }
-                );
-                
-                // Додаємо обробники подій для відстеження (необов'язково, але корисно для налагодження)
-                anchor1.onTargetFound = () => { console.log("Знайдено маркер 1"); }
-                anchor1.onTargetLost = () => { console.log("Втрачено маркер 1"); }
+        import { GLTFLoader } from "GLTFLoader";
 
 
-                // 5. Створення якоря та завантаження другої моделі (для маркера з індексом 1)
-                const anchor2 = mindarThree.addAnchor(1);
-                loader.load(
-                    "./models/logo.glb",
-                    (gltf) => {
-                        const model = gltf.scene;
-                        model.scale.set(0.1, 0.1, 0.1);
-                        model.position.set(0, -0.2, 0);
-                        anchor2.group.add(model); // Прив'язуємо модель до другого якоря
-                    }
-                );
 
-                anchor2.onTargetFound = () => { console.log("Знайдено маркер 2"); }
-                anchor2.onTargetLost = () => { console.log("Втрачено маркер 2"); }
+        // ЗМІНЕНО: Ініціалізація AR запускається з невеликою затримкою,
+
+        // щоб уникнути "умови гонки" під час завантаження сторінки.
+
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const startAR = async () => {
+
+                const { MindARThree } = window.MINDAR.IMAGE;
+
+                const mindarThree = new MindARThree({
+
+                    container: document.querySelector(".ar-container"),
+
+                    imageTargetSrc: "./patterns/combined.mind",
+
+                    maxTrack: 2
+
+                });
+
+                const { renderer, scene, camera } = mindarThree;
 
 
-                // 6. Запуск AR-сесії
-                await mindarThree.start();
 
-                // 7. Запуск циклу рендерингу
-                renderer.setAnimationLoop(() => {
-                    const delta = clock.getDelta();
-                    // Оновлюємо анімацію першої моделі
-                    if (mixer1) {
-                        mixer1.update(delta);
-                    }
-                    renderer.render(scene, camera);
-                });
-            };
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 
-            startAR();
-        });
-    </script>
+                scene.add(ambientLight);
+
+                
+
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+
+                directionalLight.position.set(0, 5, 10);
+
+                scene.add(directionalLight);
+
+
+
+                const loader = new GLTFLoader();
+
+                const clock = new THREE.Clock();
+
+                let mixer1;
+
+
+
+                const anchor1 = mindarThree.addAnchor(0);
+
+                loader.load("./models/kaneki_dance1.glb", (gltf) => {
+
+                    gltf.scene.scale.set(0.7, 0.7, 0.7);
+
+                    gltf.scene.position.set(0, -1.2, 0);
+
+                    anchor1.group.add(gltf.scene);
+
+
+
+                    if (gltf.animations.length > 0) {
+
+                        mixer1 = new THREE.AnimationMixer(gltf.scene);
+
+                        const action = mixer1.clipAction(gltf.animations[0]);
+
+                        action.play();
+
+                    }
+
+                });
+
+                anchor1.onTargetFound = () => { console.log("Знайдено маркер 1 (artem)"); }
+
+                anchor1.onTargetLost = () => { console.log("Втрачено маркер 1 (artem)"); }
+
+
+
+                const anchor2 = mindarThree.addAnchor(1);
+
+                loader.load("./models/logo.glb", (gltf) => {
+
+                    gltf.scene.scale.set(0.1, 0.1, 0.1);
+
+                    gltf.scene.position.set(0, -2.2, 0);
+
+                    anchor2.group.add(gltf.scene);
+
+                });
+
+                anchor2.onTargetFound = () => { console.log("Знайдено маркер 2 (target)"); }
+
+                anchor2.onTargetLost = () => { console.log("Втрачено маркер 2 (target)"); }
+
+
+
+                await mindarThree.start();
+
+                renderer.setAnimationLoop(() => {
+
+                    const delta = clock.getDelta();
+
+                    if (mixer1) {
+
+                        mixer1.update(delta);
+
+                    }
+
+                    renderer.render(scene, camera);
+
+                });
+
+            };
+
+
+
+            // Запускаємо AR з невеликою затримкою
+
+            setTimeout(startAR, 100);
+
+        });
+
+    </script>
+
 </body>
+
 </html>
